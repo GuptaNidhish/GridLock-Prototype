@@ -1,0 +1,5 @@
+*.csv
+*.env
+.virtual_documents/
+anaconda_projects/
+.ipynb_checkpoints/
