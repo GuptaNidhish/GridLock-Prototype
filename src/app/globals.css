@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+:root {
+  --background: #05070f;
+  --foreground: #f1f5f9;
+  --card-bg: rgba(10, 14, 28, 0.75);
+  --card-border: rgba(255, 255, 255, 0.07);
+  --accent-blue: #0ea5e9;
+  --accent-blue-glow: rgba(14, 165, 233, 0.15);
+  --status-green: #10b981;
+  --status-green-glow: rgba(16, 185, 129, 0.15);
+  --status-yellow: #f59e0b;
+  --status-yellow-glow: rgba(245, 158, 11, 0.15);
+  --status-red: #ef4444;
+  --status-red-glow: rgba(239, 68, 68, 0.2);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom Utilities for Premium Glassmorphism */
+.glass-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px 0 rgba(14, 165, 233, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Neon Text / Glow Effects */
+.glow-blue {
+  text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+}
+.glow-green {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+.glow-yellow {
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+.glow-red {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 28, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Keyframes for animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes flow-line {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animate-flow {
+  stroke-dasharray: 6, 4;
+  animation: flow-line 2s linear infinite;
+}
+
+.animate-flow-fast {
+  stroke-dasharray: 6, 4;
+  animation: flow-line 0.8s linear infinite;
+}
+
+.animate-flow-slow {
+  stroke-dasharray: 6, 4;
+  animation: flow-line 4s linear infinite;
+}
+
+/* Real Leaflet Map Dark Theme Overrides */
+.dark-map-container {
+  background: #02040a !important;
+}
+
+.dark-map-container .leaflet-tile-container {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(110%);
+}
+
+.dark-map-container .leaflet-container {
+  background: #02040a !important;
+}
+
+.dark-map-container .leaflet-popup-content-wrapper {
+  background: rgba(10, 14, 28, 0.95) !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 8px !important;
+  color: #e2e8f0 !important;
+  font-family: system-ui, sans-serif !important;
+}
+
+.dark-map-container .leaflet-popup-tip {
+  background: rgba(10, 14, 28, 0.95) !important;
+  border-left: 1px solid rgba(14, 165, 233, 0.4) !important;
+  border-top: 1px solid rgba(14, 165, 233, 0.4) !important;
+}
+
+.dark-map-container .leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.dark-map-container .leaflet-bar a {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s;
+}
+
+.dark-map-container .leaflet-bar a:hover {
+  background: rgba(14, 165, 233, 0.2) !important;
+  color: #38bdf8 !important;
+}
