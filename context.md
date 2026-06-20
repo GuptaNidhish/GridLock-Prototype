@@ -74,11 +74,20 @@ ASTRAM COMMAND is an Event-Driven Congestion Intelligence Platform for Bengaluru
 18. **Event Calendar Intelligence**: Scraped event risk schedule grid.
 19. **Performance Analytics Dashboard**: Response sparklines and compliance ratings.
 20. **Officer Gamification**: Achievement leaderboards and badges.
-21. **AI Traffic Co-Pilot Brain [NEW]**: Rule-based intelligence engine parsing system logs to output structured execution advice. Includes an NLP prompt bar ("Ask ASTRAM AI...").
-22. **Pop-out Window Sub-routing [NEW]**: Individual widgets are addressable via separate full-screen routes (`/map`, `/whatsapp`, `/analytics`, `/tracker`) allowing open-in-new-tab actions.
-23. **Resizable Grid Workspace Settings [NEW]**: Flexible layout grid allowing reordering, rescaled dimensions, and layout state saves to local storage.
+21. **AI Traffic Co-Pilot Brain**: Rule-based intelligence engine parsing system logs to output structured execution advice. Includes an NLP prompt bar ("Ask ASTRAM AI...").
+22. **Pop-out Window Sub-routing**: Individual widgets are addressable via separate full-screen routes (`/map`, `/whatsapp`, `/analytics`, `/tracker`) allowing open-in-new-tab actions.
+23. **Resizable Grid Workspace Settings**: Flexible layout grid allowing reordering, rescaled dimensions, and layout state saves to local storage.
+24. **Real-Time Simulation Engine [NEW]**: Client-side `useRealtimeEngine` hook driving 7 interval timers — live clock, signal phase tickers, corridor speed drift, auto-incident spawner (15-25s), auto-resolver (30s), weather cycling (90s), and SLA breach detection (20s). Simulation can be toggled ON/OFF from header.
+25. **Live Activity Feed [NEW]**: Floating bottom-right toast notification panel streaming timestamped system events — new incidents, resolutions, weather alerts, SLA breaches. Shows severity-coded entries with a "LIVE" badge.
+26. **Incident Triage Queue [NEW]**: Scrollable feed of active incidents with severity bars, type icons, time-ago labels. New incidents flash yellow for 3 cycles. Click to select in SLA Tracker.
+27. **Signal Phase Monitor [NEW]**: Live junction signal phase visualizer for 5 junctions — per-second countdown bars, traffic light dot indicators, Webster override buttons. Phases auto-cycle green→amber→red.
+28. **Map Corridor Speed Labels [NEW]**: Real-time speed labels (e.g. "32 km/h ↑") rendered at corridor midpoints on the Leaflet map. Color-coded: green (>25), amber (15-25), red (<15).
 
 ## Implementation Architecture
-*   **Framework**: Next.js (App Router, TypeScript)
-*   **Styling**: Tailwind CSS / Vanilla CSS variables for high-fidelity glassmorphism dark theme.
-*   **State Management**: LocalStorage for workspace configs, unified state in main container.
+*   **Frontend**: Next.js (App Router, TypeScript) with Leaflet Map and HSL-based cyberpunk glassmorphism.
+*   **Backend**: Node.js, Express, and WebSocket Server (port 3001) using an MVC (Model-View-Controller) structure.
+*   **Database**: SQLite (`backend/astram.db`) storing 45-column incidents, officer stats, flood risk spots, and event DNA profiles.
+*   **Real-Time Simulation Engine**: Server-side engine in `backend/services/simulationService.js` that ticks signal cycles, drifts corridor speeds, spawns/resolves incidents, checks SLA breaches, and broadcasts changes to all WebSocket clients.
+*   **State Management**: WebSockets synchronizing the client to the server-side simulation clock and active incident state in real-time.
+
+

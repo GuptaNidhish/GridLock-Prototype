@@ -39,3 +39,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backend Node.js dependencies
+backend/node_modules/
+backend/astram.db
+
+# local SQLite databases and journal files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+
+# IDE and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+

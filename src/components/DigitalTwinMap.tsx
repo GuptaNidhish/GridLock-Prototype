@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Incident, BarricadePoint } from '../data/mockDatabase';
+import { CorridorSpeed } from '../hooks/useRealtimeEngine';
 import { ExternalLink, AlertTriangle, CloudRain, Shield, ToggleLeft, ToggleRight, MapPin } from 'lucide-react';
 
 interface DigitalTwinMapProps {
@@ -7,6 +8,7 @@ interface DigitalTwinMapProps {
   barricadePoints: BarricadePoint[];
   emergencyCorridorActive: boolean;
   activeIncidents: Incident[];
+  corridorSpeeds?: CorridorSpeed[];
   onSelectIncident: (id: string) => void;
   onMapCoordinatesClick?: (lat: number, lon: number) => void;
   onToggleJunctionSignal?: (junctionId: string) => void;
@@ -18,6 +20,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
   barricadePoints,
   emergencyCorridorActive,
   activeIncidents,
+  corridorSpeeds,
   onSelectIncident,
   onMapCoordinatesClick,
   onToggleJunctionSignal,
@@ -146,7 +149,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
     layers.incidents.clearLayers();
     layers.barricades.clearLayers();
 
-    // 1. Draw Corridors
+    // 1. Draw Corridors with Speed Labels
     corridors.forEach((corr) => {
       const color = getRoadColor(corr.name);
       const isEmergency = emergencyCorridorActive && corr.id === 'cbd_2';
@@ -169,6 +172,27 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
           lon: e.latlng.lng,
         });
       });
+
+      // Speed label at corridor midpoint
+      const speedData = corridorSpeeds?.find((cs) => cs.id === corr.id);
+      if (speedData && corr.path.length >= 2) {
+        const midIdx = Math.floor(corr.path.length / 2);
+        const midPoint: [number, number] = [
+          (corr.path[midIdx - 1][0] + corr.path[midIdx][0]) / 2,
+          (corr.path[midIdx - 1][1] + corr.path[midIdx][1]) / 2,
+        ];
+        const trendArrow = speedData.trend === 'up' ? '↑' : speedData.trend === 'down' ? '↓' : '';
+        const speedColor = speedData.speed < 15 ? '#ef4444' : speedData.speed < 25 ? '#f59e0b' : '#10b981';
+
+        const speedIcon = L.divIcon({
+          className: 'speed-label-icon',
+          html: `<div style="background:rgba(2,4,10,0.85);border:1px solid ${speedColor};color:${speedColor};padding:1px 5px;border-radius:4px;font-size:9px;font-weight:900;font-family:monospace;white-space:nowrap;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">${speedData.speed} km/h ${trendArrow}</div>`,
+          iconSize: [60, 16],
+          iconAnchor: [30, 8],
+        });
+
+        L.marker(midPoint, { icon: speedIcon, interactive: false }).addTo(layers.corridors);
+      }
     });
 
     // 2. Draw Junction Nodes
@@ -244,7 +268,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
 
       L.marker(coords, { icon: bpIcon }).addTo(layers.barricades);
     });
-  }, [weather, emergencyCorridorActive, activeIncidents, barricadePoints]);
+  }, [weather, emergencyCorridorActive, activeIncidents, barricadePoints, corridorSpeeds]);
 
   return (
     <div className="glass-panel p-6 flex flex-col h-full relative overflow-hidden dark-map-container">
