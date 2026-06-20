@@ -33,7 +33,8 @@ export const IncidentTracker: React.FC<IncidentTrackerProps> = ({
   const daysDiff = Math.floor(timeDiffMs / (1000 * 60 * 60 * 24));
   const hoursDiff = Math.floor((timeDiffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  const isViolated = selectedIncident.status === 'active' && daysDiff >= 1; // Over 24 hours is a violation
+  const elapsedHours = timeDiffMs / (1000 * 60 * 60);
+  const isViolated = selectedIncident.status === 'active' && elapsedHours > selectedIncident.duration_sla_hours;
 
   const escalationChain = ['Field Officer', 'Station Inspector', 'ACP Traffic', 'DCP East/West', 'Commissioner of Police'];
 
@@ -140,7 +141,7 @@ export const IncidentTracker: React.FC<IncidentTrackerProps> = ({
               <div>
                 <p className="font-extrabold text-red-400 uppercase">SLA CRITICAL BREACH WARNING</p>
                 <p className="text-slate-300 mt-0.5">
-                  Active for <span className="font-bold text-red-400">{daysDiff} days, {hoursDiff} hours</span>! (Target: {selectedIncident.duration_sla_hours} hrs)
+                  Active for <span className="font-bold text-red-400">{daysDiff > 0 ? `${daysDiff}d ` : ''}{hoursDiff}h</span>! (ML TTR Target: <span className="font-mono text-red-400 font-bold">{selectedIncident.duration_sla_hours}h</span>)
                 </p>
               </div>
             </div>

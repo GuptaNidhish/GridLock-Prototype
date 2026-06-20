@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Camera, Check, ShieldAlert, Sparkles, ExternalLink } from 'lucide-react';
+import { predictIncidentType, extractIncidentLocation } from '../data/whatsappNlpEvaluator';
 
 interface Message {
   id: string;
@@ -65,36 +66,31 @@ export const WhatsAppBot: React.FC<WhatsAppBotProps> = ({
     setMessages((prev) => [...prev, officerMsg]);
     setInputValue('');
 
-    // Simulated Bot AI Response logic
+    // Simulated Bot ML NLP Response logic
     setTimeout(() => {
       let botResponse = '';
       const normText = textToSend.toLowerCase();
 
-      if (normText.includes('water') || normText.includes('flood')) {
-        botResponse = '🤖 Incident LOGGED: water_logging\n📍 Location: ORR East 2 underpass\n\nTriggering pump coordination and alerting BBMP control room. Acknowledge? (Reply: ACK)';
-        onAddIncidentFromBot(
-          'water_logging',
-          'ORR East 2 underpass',
-          12.9995,
-          77.6827,
-          'Officer reported water logging via WhatsApp.'
-        );
-      } else if (normText.includes('accident') || normText.includes('crash')) {
-        botResponse = '🤖 Critical Alert: accident reported.\n📍 Location: Hosur Road near Silk Board\n\nEmergency services notified. Deploying local towing crew. Acknowledge? (Reply: ACK)';
-        onAddIncidentFromBot(
-          'accident',
-          'Hosur Road near Silk Board',
-          12.9176,
-          77.6244,
-          'Officer reported major accident via WhatsApp.'
-        );
-      } else if (normText.includes('diversion') || normText === '1') {
-        botResponse = '🤖 Confirmed. Road diversion rules pushed to MapMyIndia APIs. Commuters are being dynamically rerouted around Sankey Road.';
-        onActivateDiversion('CBD 2');
-      } else if (normText.includes('clear') || normText.includes('resolved')) {
-        botResponse = '🤖 Understood. Marking incident status as RESOLVED. Archiving case files. Thank you for the update, officer!';
+      if (normText.includes('diversion') || normText === '1') {
+        const geoDetails = extractIncidentLocation(textToSend);
+        botResponse = `🤖 Confirmed. Road diversion rules pushed to MapMyIndia APIs. Commuters are being dynamically rerouted around ${geoDetails.location.split(',')[0]}.`;
+        onActivateDiversion(geoDetails.corridor);
+      } else if (normText.includes('clear') || normText.includes('resolved') || normText === 'ack') {
+        botResponse = '🤖 Understood. Acknowledging and updating system status. Thank you for the update, officer!';
       } else {
-        botResponse = '🤖 Welcome to ASTRAM Command Bot.\nCommands:\n- "water logging" (report flood)\n- "accident" (report crash)\n- "1" (activate diversion)\n- "resolved" (clear blockage)';
+        // Evaluate incoming text using our trained ML models
+        const predictedType = predictIncidentType(textToSend);
+        const geoDetails = extractIncidentLocation(textToSend);
+
+        botResponse = `🤖 ML CLASSIFIER LOGGED: ${predictedType.toUpperCase().replace('_', ' ')}\n📍 Location: ${geoDetails.location}\n🛣️ Corridor: ${geoDetails.corridor}\n\nTriggering recovery playbook. Is a diversion needed? (Reply: 1 for Yes)`;
+        
+        onAddIncidentFromBot(
+          predictedType,
+          geoDetails.location,
+          geoDetails.lat,
+          geoDetails.lon,
+          `Officer report: "${textToSend}"`
+        );
       }
 
       setMessages((prev) => [

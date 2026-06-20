@@ -1,0 +1,395 @@
+{
+  "category_maps": {
+    "event_cause": {
+      "Debris": 0,
+      "accident": 1,
+      "congestion": 2,
+      "construction": 3,
+      "others": 4,
+      "pot_holes": 5,
+      "procession": 6,
+      "protest": 7,
+      "road_conditions": 8,
+      "test_demo": 9,
+      "tree_fall": 10,
+      "vehicle_breakdown": 11,
+      "water_logging": 12
+    },
+    "priority": {
+      "High": 0,
+      "Low": 1
+    },
+    "police_station": {
+      "Adugodi": 0,
+      "Ashok Nagar": 1,
+      "Banashankari": 2,
+      "Banaswadi": 3,
+      "Basavanagudi": 4,
+      "Bellandur": 5,
+      "Byatarayanapura": 6,
+      "Chamarajpet": 7,
+      "Chikkabanavara": 8,
+      "Chikkajala": 9,
+      "City Market": 10,
+      "Cubbon Park": 11,
+      "Devanahalli Airport": 12,
+      "Electronic City": 13,
+      "HAL Old Airport": 14,
+      "HSR Layout": 15,
+      "Halasur": 16,
+      "Halasuru Gate": 17,
+      "Hebbala": 18,
+      "Hennuru": 19,
+      "High ground": 20,
+      "Hulimavu": 21,
+      "J.P. Nagar": 22,
+      "Jalahalli": 23,
+      "Jayanagara": 24,
+      "Jeevanbheemanagar": 25,
+      "Jnanabharathi": 26,
+      "K.G. Halli": 27,
+      "K.R. Pura": 28,
+      "K.S. Layout": 29,
+      "Kamakshipalya": 30,
+      "Kengeri": 31,
+      "Kodigehalli": 32,
+      "Madiwala": 33,
+      "Magadi Road": 34,
+      "Mahadevapura": 35,
+      "Malleshwaram": 36,
+      "Mico Layout": 37,
+      "Peenya": 38,
+      "Pulikeshinagar(F.Town)": 39,
+      "R.T. Nagar": 40,
+      "Rajajinagar": 41,
+      "Sadashivanagar": 42,
+      "Sheshadripuram": 43,
+      "Shivajinagar": 44,
+      "Thalagattapura": 45,
+      "Upparpet": 46,
+      "V.V.Puram (C.Pet)": 47,
+      "Vijayanagara": 48,
+      "Whitefield": 49,
+      "Wilson Garden": 50,
+      "Yelahanka": 51,
+      "Yeshwanthpura": 52
+    },
+    "corridor": {
+      "Airport New South Road": 0,
+      "Bannerghata Road": 1,
+      "Bellary Road 1": 2,
+      "Bellary Road 2": 3,
+      "CBD 1": 4,
+      "CBD 2": 5,
+      "Hennur Main Road": 6,
+      "Hosur Road": 7,
+      "IRR(Thanisandra road)": 8,
+      "Magadi Road": 9,
+      "Mysore Road": 10,
+      "Non-corridor": 11,
+      "ORR East 1": 12,
+      "ORR East 2": 13,
+      "ORR North 1": 14,
+      "ORR North 2": 15,
+      "ORR West 1": 16,
+      "Old Airport Road": 17,
+      "Old Madras Road": 18,
+      "Tumkur Road": 19,
+      "Varthur Road": 20,
+      "West of Chord Road": 21
+    },
+    "veh_type": {
+      "auto": 0,
+      "bmtc_bus": 1,
+      "heavy_vehicle": 2,
+      "ksrtc_bus": 3,
+      "lcv": 4,
+      "others": 5,
+      "private_bus": 6,
+      "private_car": 7,
+      "taxi": 8,
+      "truck": 9
+    }
+  },
+  "feature_names": [
+    "event_cause_encoded",
+    "priority_encoded",
+    "police_station_encoded",
+    "corridor_encoded",
+    "veh_type_encoded"
+  ],
+  "tree": {
+    "type": "split",
+    "feature": "event_cause_encoded",
+    "threshold": 8.5,
+    "left": {
+      "type": "split",
+      "feature": "event_cause_encoded",
+      "threshold": 4.5,
+      "left": {
+        "type": "split",
+        "feature": "event_cause_encoded",
+        "threshold": 0.5,
+        "left": {
+          "type": "split",
+          "feature": "priority_encoded",
+          "threshold": 0.5,
+          "left": {
+            "type": "leaf",
+            "value": 319.8273532363889
+          },
+          "right": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 48.5,
+            "left": {
+              "type": "leaf",
+              "value": 2000.0
+            },
+            "right": {
+              "type": "leaf",
+              "value": 446.11224370444444
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "event_cause_encoded",
+          "threshold": 2.5,
+          "left": {
+            "type": "split",
+            "feature": "event_cause_encoded",
+            "threshold": 1.5,
+            "left": {
+              "type": "leaf",
+              "value": 0.7988852830491698
+            },
+            "right": {
+              "type": "leaf",
+              "value": 1.2446398746464646
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 2.5,
+            "left": {
+              "type": "leaf",
+              "value": 440.12344852946245
+            },
+            "right": {
+              "type": "leaf",
+              "value": 190.50642759687747
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "split",
+        "feature": "event_cause_encoded",
+        "threshold": 5.5,
+        "left": {
+          "type": "split",
+          "feature": "police_station_encoded",
+          "threshold": 45.5,
+          "left": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 1.5,
+            "left": {
+              "type": "leaf",
+              "value": 1079.1059533353612
+            },
+            "right": {
+              "type": "leaf",
+              "value": 593.4429260809491
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 49.5,
+            "left": {
+              "type": "leaf",
+              "value": 123.77198693647664
+            },
+            "right": {
+              "type": "leaf",
+              "value": 332.714141872662
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "event_cause_encoded",
+          "threshold": 7.5,
+          "left": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 50.0,
+            "left": {
+              "type": "leaf",
+              "value": 0.7033744864484127
+            },
+            "right": {
+              "type": "leaf",
+              "value": 2.7802277669444444
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "priority_encoded",
+            "threshold": 0.5,
+            "left": {
+              "type": "leaf",
+              "value": 229.88719854141257
+            },
+            "right": {
+              "type": "leaf",
+              "value": 607.0811515823887
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "type": "split",
+      "feature": "event_cause_encoded",
+      "threshold": 11.5,
+      "left": {
+        "type": "split",
+        "feature": "event_cause_encoded",
+        "threshold": 10.5,
+        "left": {
+          "type": "split",
+          "feature": "police_station_encoded",
+          "threshold": 36.5,
+          "left": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 17.5,
+            "left": {
+              "type": "leaf",
+              "value": 116.951823621164
+            },
+            "right": {
+              "type": "leaf",
+              "value": 51.92266809580473
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 20.0,
+            "left": {
+              "type": "leaf",
+              "value": 136.4293981515432
+            },
+            "right": {
+              "type": "leaf",
+              "value": 623.4885287555555
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 2.5,
+          "left": {
+            "type": "split",
+            "feature": "veh_type_encoded",
+            "threshold": 1.5,
+            "left": {
+              "type": "leaf",
+              "value": 6.602495161289684
+            },
+            "right": {
+              "type": "leaf",
+              "value": 0.842392747440048
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "veh_type_encoded",
+            "threshold": 2.5,
+            "left": {
+              "type": "leaf",
+              "value": 0.8904772025433734
+            },
+            "right": {
+              "type": "leaf",
+              "value": 0.7639041105282328
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "split",
+        "feature": "police_station_encoded",
+        "threshold": 43.5,
+        "left": {
+          "type": "split",
+          "feature": "police_station_encoded",
+          "threshold": 14.5,
+          "left": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 6.0,
+            "left": {
+              "type": "leaf",
+              "value": 791.2431627037963
+            },
+            "right": {
+              "type": "leaf",
+              "value": 189.71049198036894
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 17.5,
+            "left": {
+              "type": "leaf",
+              "value": 144.47235135017456
+            },
+            "right": {
+              "type": "leaf",
+              "value": 297.3944844478395
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 15.0,
+          "left": {
+            "type": "split",
+            "feature": "police_station_encoded",
+            "threshold": 50.5,
+            "left": {
+              "type": "leaf",
+              "value": 416.8450598130277
+            },
+            "right": {
+              "type": "leaf",
+              "value": 242.9397690972569
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 19.5,
+            "left": {
+              "type": "leaf",
+              "value": 84.85834540708333
+            },
+            "right": {
+              "type": "leaf",
+              "value": 63.7963560512037
+            }
+          }
+        }
+      }
+    }
+  }
+}

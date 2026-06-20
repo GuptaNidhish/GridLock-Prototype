@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarricadePoint } from '../data/mockDatabase';
-import { Shield, Settings, Users, AlertTriangle, CheckCircle, Navigation, Radio, ParkingSquare, Train, Eye } from 'lucide-react';
+import { Shield, Settings, Users, AlertTriangle, CheckCircle, Navigation, Radio, ParkingSquare, Train, Eye, ArrowRight } from 'lucide-react';
+import { evaluateSignalTimings, generateRouteVaccinationTimeline } from '../data/signalsMlEvaluator';
 
 interface OrchestrationPanelsProps {
   barricadePoints: BarricadePoint[];
@@ -9,6 +10,8 @@ interface OrchestrationPanelsProps {
   onToggleEmergencyCorridor: () => void;
   weather: string;
   onTriggerAnomalyTicket: (title: string, desc: string, location: string, lat: number, lon: number, type: string) => void;
+  replayTime?: number;
+  activeIncidents?: any[];
 }
 
 export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
@@ -18,18 +21,45 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
   onToggleEmergencyCorridor,
   weather,
   onTriggerAnomalyTicket,
+  replayTime = 1020, // default 17:00 in minutes
+  activeIncidents = [],
 }) => {
   const [activeTab, setActiveTab] = useState<'tactical' | 'signals' | 'agencies' | 'anomalies'>('tactical');
   const [vipLevel, setVipLevel] = useState<'Z+' | 'Z' | 'Y'>('Z');
   const [anomalyLogged, setAnomalyLogged] = useState(false);
+  const [appliedWebsterJunctions, setAppliedWebsterJunctions] = useState<Record<string, boolean>>({});
 
-  // Vaccine checklist
-  const vaccineSteps = [
-    { day: 'Day -3', text: 'Push gentle advisory on socials & adjust MapMyIndia routing weights.', done: true },
-    { day: 'Day -2', text: 'Distribute WFH advisories to Whitefield IT Parks & adjust alternative timings.', done: true },
-    { day: 'Day -1', text: 'Pre-position barricade units & post warning VMS signage.', done: false },
-    { day: 'Day 0', text: 'Activate barricade checks and initiate signal green-waves at T-2h.', done: false },
-  ];
+  const hour = Math.floor(replayTime / 60) % 24;
+  const signalRecommendations = evaluateSignalTimings(hour, weather, activeIncidents);
+  const vaccinationTimeline = generateRouteVaccinationTimeline(activeIncidents, weather);
+
+  // Track timeline check box clicks locally
+  const [timelineChecked, setTimelineChecked] = useState<Record<number, boolean>>({
+    0: true,
+    1: true,
+    2: false,
+    3: false,
+  });
+
+  // Re-initialize checkboxes whenever timeline changes dynamically
+  React.useEffect(() => {
+    setTimelineChecked({
+      0: true,
+      1: true,
+      2: false,
+      3: false,
+    });
+  }, [weather, activeIncidents.filter(i => i.status === 'active').length]);
+
+  const handleApplyRecalibration = (junctionName: string) => {
+    setAppliedWebsterJunctions((prev) => ({
+      ...prev,
+      [junctionName]: true
+    }));
+    // Toggle green wave system override on the map/telemetries
+    onToggleEmergencyCorridor();
+    alert(`AI Adaptive Recalibration Applied at ${junctionName}.\nWebster parameters loaded. Cycle timing adjusted.`);
+  };
 
   return (
     <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[380px]">
@@ -114,13 +144,19 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
                 Route Vaccination Timeline
               </p>
-              <div className="space-y-1.5">
-                {vaccineSteps.map((vs, idx) => (
+              <div className="space-y-2">
+                {vaccinationTimeline.map((vs, idx) => (
                   <div key={idx} className="flex items-start space-x-2 text-[9.5px]">
-                    <span className={`font-black uppercase flex-shrink-0 w-11 ${vs.done ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    <input
+                      type="checkbox"
+                      checked={timelineChecked[idx] !== undefined ? timelineChecked[idx] : vs.done}
+                      onChange={(e) => setTimelineChecked(prev => ({ ...prev, [idx]: e.target.checked }))}
+                      className="mt-0.5 w-3 h-3 rounded bg-slate-900 border-slate-800 text-sky-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className={`font-black uppercase flex-shrink-0 w-11 ${(timelineChecked[idx] ?? vs.done) ? 'text-emerald-400' : 'text-slate-500'}`}>
                       {vs.day}:
                     </span>
-                    <span className={vs.done ? 'text-slate-300 line-through decoration-slate-650' : 'text-slate-200'}>
+                    <span className={(timelineChecked[idx] ?? vs.done) ? 'text-slate-400 line-through decoration-slate-650' : 'text-slate-200 font-medium'}>
                       {vs.text}
                     </span>
                   </div>
@@ -131,22 +167,54 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
         )}
 
         {activeTab === 'signals' && (
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {/* Webster Signal Optimization */}
             <div>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2.5">
                 Webster Adaptive Signal Tuning
               </p>
-              <div className="bg-slate-950/40 border border-slate-900 p-2.5 rounded-lg text-[9.5px]">
-                <div className="flex justify-between items-baseline mb-1.5">
-                  <span className="font-bold text-slate-200">Queens Statue Circle</span>
-                  <span className="text-emerald-400 font-bold">Webster recommendation active</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Current cycle: <span className="font-mono text-slate-300">120s</span></span>
-                  <span>Optimal: <span className="font-mono text-slate-300">180s (Green wave coord)</span></span>
-                  <span className="text-emerald-400 font-bold">+22% Flow Efficiency</span>
-                </div>
+              <div className="space-y-2.5">
+                {signalRecommendations.map((rec, idx) => {
+                  const isApplied = appliedWebsterJunctions[rec.junctionName] || (rec.junctionName === 'Queens Statue Circle' && emergencyCorridorActive);
+                  
+                  return (
+                    <div key={idx} className="bg-slate-950/40 border border-slate-900 p-2.5 rounded-lg text-[9.5px] flex items-center justify-between">
+                      <div className="flex-1 pr-3.5">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="font-bold text-slate-200">{rec.junctionName}</span>
+                          {isApplied ? (
+                            <span className="text-emerald-400 font-bold uppercase tracking-wider text-[8px] flex items-center">
+                              <CheckCircle className="w-2.5 h-2.5 mr-0.5" /> Recalibrated
+                            </span>
+                          ) : (
+                            <span className="text-sky-400 font-medium text-[8px] uppercase">Webster Recommendation Available</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col space-y-0.5 text-slate-400">
+                          <div className="flex justify-between">
+                            <span>Base: <span className="font-mono text-slate-300">{rec.currentCycle}s</span></span>
+                            <span>Optimal: <span className="font-mono text-slate-200 font-bold">{rec.optimalCycle}s</span></span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Split: <span className="font-mono text-slate-350">{rec.mainSplitSec}s (Main) / {rec.crossSplitSec}s (Cross)</span></span>
+                            <span className="text-emerald-400 font-extrabold">+{rec.flowEfficiencyGain}% Flow</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleApplyRecalibration(rec.junctionName)}
+                        disabled={isApplied}
+                        className={`px-2 py-1.5 rounded font-black text-[8.5px] uppercase tracking-wider transition cursor-pointer ${
+                          isApplied
+                            ? 'bg-emerald-950/20 text-emerald-400/80 border border-emerald-950 cursor-not-allowed'
+                            : 'bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold'
+                        }`}
+                      >
+                        {isApplied ? 'Applied' : 'Apply'}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

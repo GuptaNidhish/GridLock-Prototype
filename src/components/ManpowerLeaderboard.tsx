@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { Officer } from '../data/mockDatabase';
 import { Calendar, Award, UserCheck, Star, Clock, Trophy } from 'lucide-react';
+import { evaluateManpowerNeeds } from '../data/manpowerMlEvaluator';
 
 interface ManpowerLeaderboardProps {
   officers: Officer[];
+  weather?: string;
+  replayTime?: number;
+  activeIncidents?: any[];
 }
 
-export const ManpowerLeaderboard: React.FC<ManpowerLeaderboardProps> = ({ officers }) => {
+export const ManpowerLeaderboard: React.FC<ManpowerLeaderboardProps> = ({
+  officers,
+  weather = 'clear',
+  replayTime = 1020, // default 17:00 in minutes
+  activeIncidents = [],
+}) => {
   const [activeTab, setActiveTab] = useState<'scheduler' | 'leaderboard'>('scheduler');
 
-  const shiftAssignments = [
-    { position: 'MG Road Gate', officersNeeded: 4, lead: 'ASI Raju Hegde', active: 'Shift A' },
-    { position: 'Queens Statue Circle', officersNeeded: 3, lead: 'SI Kumar Swamy', active: 'Shift A' },
-    { position: 'Cubbon Rd/Museum Junc', officersNeeded: 2, lead: 'Inspector सुरेश', active: 'Shift A' },
-    { position: 'BSNL CACT Underpass', officersNeeded: 2, lead: 'HC Manjunath Prasanna', active: 'Shift B' },
-  ];
+  const hour = Math.floor(replayTime / 60) % 24;
+  const evalResult = evaluateManpowerNeeds(hour, weather, activeIncidents);
 
   return (
     <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[350px]">
@@ -57,12 +62,12 @@ export const ManpowerLeaderboard: React.FC<ManpowerLeaderboardProps> = ({ office
             {/* Roster overview */}
             <div className="bg-slate-950/40 border border-slate-900 p-2.5 rounded flex items-center justify-between text-[10px]">
               <span className="text-slate-400">
-                Recommended: <span className="text-slate-200 font-bold">22 Officers</span>
+                Recommended: <span className="text-slate-200 font-bold">{evalResult.totalRecommended} Officers</span>
               </span>
               <span className="text-slate-400">
-                Available: <span className="text-emerald-400 font-bold">31 Officers</span>
+                Available: <span className="text-emerald-400 font-bold">{evalResult.availableStaff} Officers</span>
               </span>
-              <span className="text-sky-400 font-bold uppercase">Optimal Ratio ✅</span>
+              <span className={`font-bold uppercase ${evalResult.statusColorClass}`}>{evalResult.statusText}</span>
             </div>
 
             {/* Shift Assignments Table */}
@@ -76,14 +81,17 @@ export const ManpowerLeaderboard: React.FC<ManpowerLeaderboardProps> = ({ office
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-900/60">
-                  {shiftAssignments.map((shift, i) => (
+                  {evalResult.recommendedShifts.map((shift, i) => (
                     <tr key={i} className="hover:bg-slate-900/20 text-slate-300">
-                      <td className="p-2 font-medium">{shift.position}</td>
+                      <td className="p-2 font-medium">
+                        {shift.position}
+                        <span className="text-[8px] text-slate-500 block">{shift.corridor}</span>
+                      </td>
                       <td className="p-2 text-center font-bold text-sky-400">{shift.officersNeeded}</td>
                       <td className="p-2 text-slate-400 font-medium">
                         {shift.lead}
                         <span className="text-[8px] bg-slate-900 border border-slate-800 text-slate-500 px-1 ml-1.5 rounded uppercase">
-                          {shift.active}
+                          {shift.activeShift}
                         </span>
                       </td>
                     </tr>

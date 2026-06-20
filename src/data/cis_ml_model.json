@@ -1,0 +1,349 @@
+{
+  "category_maps": {
+    "corridor": {
+      "Airport New South Road": 0,
+      "Bannerghata Road": 1,
+      "Bellary Road 1": 2,
+      "Bellary Road 2": 3,
+      "CBD 1": 4,
+      "CBD 2": 5,
+      "Hennur Main Road": 6,
+      "Hosur Road": 7,
+      "IRR(Thanisandra road)": 8,
+      "Magadi Road": 9,
+      "Mysore Road": 10,
+      "Non-corridor": 11,
+      "ORR East 1": 12,
+      "ORR East 2": 13,
+      "ORR North 1": 14,
+      "ORR North 2": 15,
+      "ORR West 1": 16,
+      "Old Airport Road": 17,
+      "Old Madras Road": 18,
+      "Tumkur Road": 19,
+      "Varthur Road": 20,
+      "West of Chord Road": 21
+    },
+    "veh_type": {
+      "auto": 0,
+      "bmtc_bus": 1,
+      "heavy_vehicle": 2,
+      "ksrtc_bus": 3,
+      "lcv": 4,
+      "others": 5,
+      "private_bus": 6,
+      "private_car": 7,
+      "taxi": 8,
+      "truck": 9
+    },
+    "event_cause": {
+      "Debris": 0,
+      "Fog / Low Visibility": 1,
+      "accident": 2,
+      "congestion": 3,
+      "construction": 4,
+      "debris": 5,
+      "others": 6,
+      "pot_holes": 7,
+      "procession": 8,
+      "protest": 9,
+      "public_event": 10,
+      "road_conditions": 11,
+      "test_demo": 12,
+      "tree_fall": 13,
+      "vehicle_breakdown": 14,
+      "vip_movement": 15,
+      "water_logging": 16
+    }
+  },
+  "feature_names": [
+    "corridor_encoded",
+    "veh_type_encoded",
+    "event_cause_encoded",
+    "requires_road_closure",
+    "hour"
+  ],
+  "tree": {
+    "type": "split",
+    "feature": "hour",
+    "threshold": 6.5,
+    "left": {
+      "type": "split",
+      "feature": "veh_type_encoded",
+      "threshold": 3.5,
+      "left": {
+        "type": "split",
+        "feature": "requires_road_closure",
+        "threshold": 0.5,
+        "left": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 10.5,
+          "left": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 9.5,
+            "left": {
+              "type": "leaf",
+              "value": 17.32955776173284
+            },
+            "right": {
+              "type": "leaf",
+              "value": 19.470663265306122
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 11.5,
+            "left": {
+              "type": "leaf",
+              "value": 13.343384074941453
+            },
+            "right": {
+              "type": "leaf",
+              "value": 18.507905629139067
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 11.5,
+          "left": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 10.5,
+            "left": {
+              "type": "leaf",
+              "value": 35.546875
+            },
+            "right": {
+              "type": "leaf",
+              "value": 22.00721153846154
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "hour",
+            "threshold": 1.0,
+            "left": {
+              "type": "leaf",
+              "value": 36.578125
+            },
+            "right": {
+              "type": "leaf",
+              "value": 38.125
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "split",
+        "feature": "requires_road_closure",
+        "threshold": 0.5,
+        "left": {
+          "type": "split",
+          "feature": "veh_type_encoded",
+          "threshold": 8.5,
+          "left": {
+            "type": "split",
+            "feature": "veh_type_encoded",
+            "threshold": 6.5,
+            "left": {
+              "type": "leaf",
+              "value": 14.045687194127247
+            },
+            "right": {
+              "type": "leaf",
+              "value": 11.81894961977187
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 11.5,
+            "left": {
+              "type": "leaf",
+              "value": 16.49417808219178
+            },
+            "right": {
+              "type": "leaf",
+              "value": 19.21875
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 10.5,
+          "left": {
+            "type": "split",
+            "feature": "veh_type_encoded",
+            "threshold": 6.5,
+            "left": {
+              "type": "leaf",
+              "value": 29.386160714285715
+            },
+            "right": {
+              "type": "leaf",
+              "value": 21.326904296875
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 11.5,
+            "left": {
+              "type": "leaf",
+              "value": 15.848106971153847
+            },
+            "right": {
+              "type": "leaf",
+              "value": 21.75625
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "type": "split",
+      "feature": "veh_type_encoded",
+      "threshold": 6.5,
+      "left": {
+        "type": "split",
+        "feature": "requires_road_closure",
+        "threshold": 0.5,
+        "left": {
+          "type": "split",
+          "feature": "hour",
+          "threshold": 20.5,
+          "left": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 10.5,
+            "left": {
+              "type": "leaf",
+              "value": 36.441107109665424
+            },
+            "right": {
+              "type": "leaf",
+              "value": 29.374605301274613
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "hour",
+            "threshold": 22.5,
+            "left": {
+              "type": "leaf",
+              "value": 25.556291186161452
+            },
+            "right": {
+              "type": "leaf",
+              "value": 15.38900568181818
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 10.5,
+          "left": {
+            "type": "split",
+            "feature": "hour",
+            "threshold": 20.5,
+            "left": {
+              "type": "leaf",
+              "value": 85.59244791666667
+            },
+            "right": {
+              "type": "leaf",
+              "value": 58.77982954545455
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 11.5,
+            "left": {
+              "type": "leaf",
+              "value": 42.22443181818182
+            },
+            "right": {
+              "type": "leaf",
+              "value": 72.7080965909091
+            }
+          }
+        }
+      },
+      "right": {
+        "type": "split",
+        "feature": "requires_road_closure",
+        "threshold": 0.5,
+        "left": {
+          "type": "split",
+          "feature": "veh_type_encoded",
+          "threshold": 8.5,
+          "left": {
+            "type": "split",
+            "feature": "hour",
+            "threshold": 22.5,
+            "left": {
+              "type": "leaf",
+              "value": 19.033537257495585
+            },
+            "right": {
+              "type": "leaf",
+              "value": 11.368169247787609
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "hour",
+            "threshold": 20.5,
+            "left": {
+              "type": "leaf",
+              "value": 37.02166262135922
+            },
+            "right": {
+              "type": "leaf",
+              "value": 24.950255102040817
+            }
+          }
+        },
+        "right": {
+          "type": "split",
+          "feature": "corridor_encoded",
+          "threshold": 10.5,
+          "left": {
+            "type": "split",
+            "feature": "veh_type_encoded",
+            "threshold": 8.5,
+            "left": {
+              "type": "leaf",
+              "value": 40.25625
+            },
+            "right": {
+              "type": "leaf",
+              "value": 84.53125
+            }
+          },
+          "right": {
+            "type": "split",
+            "feature": "corridor_encoded",
+            "threshold": 11.5,
+            "left": {
+              "type": "leaf",
+              "value": 25.30784488341969
+            },
+            "right": {
+              "type": "leaf",
+              "value": 39.82557091346154
+            }
+          }
+        }
+      }
+    }
+  }
+}

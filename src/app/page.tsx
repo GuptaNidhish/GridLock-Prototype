@@ -14,7 +14,6 @@ import { PerformanceDashboard } from '../components/PerformanceDashboard';
 import { AiCopilot } from '../components/AiCopilot';
 import { LiveFeed } from '../components/LiveFeed';
 import { IncidentFeed } from '../components/IncidentFeed';
-import { SignalTimingCard } from '../components/SignalTimingCard';
 import { useRealtimeEngine } from '../hooks/useRealtimeEngine';
 import {
   initialIncidents,
@@ -23,10 +22,25 @@ import {
   Incident,
   BarricadePoint,
 } from '../data/mockDatabase';
+
 import {
-  Shield, Sparkles, AlertCircle, Cpu, Eye, EyeOff, Save, RefreshCw,
-  LayoutGrid, Clock, Power, Activity, Radio,
+  Shield,
+  Sparkles,
+  AlertCircle,
+  Cpu,
+  Eye,
+  EyeOff,
+  Save,
+  RefreshCw,
+  LayoutGrid,
+  Clock,
+  Power,
+  Activity,
+  Radio,
 } from 'lucide-react';
+
+import { evaluateIncidentCis } from '../data/cisMlEvaluator';
+import { evaluateIncidentTtr } from '../data/ttrMlEvaluator';
 
 export default function Home() {
   const [weather, setWeather] = useState<'clear' | 'light_rain' | 'heavy_rain'>('clear');
@@ -34,9 +48,15 @@ export default function Home() {
   const [alternativePlanActive, setAlternativePlanActive] = useState<boolean>(false);
   const [pumpTeamsDeployed, setPumpTeamsDeployed] = useState<boolean>(false);
   const [emergencyCorridorActive, setEmergencyCorridorActive] = useState<boolean>(false);
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>('FKID000012');
-  const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>('FKID000012'); // default active underpass
+  const [incidents, setIncidents] = useState<Incident[]>(() => {
+    return initialIncidents.map((inc) => ({
+      ...inc,
+      duration_sla_hours: evaluateIncidentTtr(inc),
+    }));
+  });
   const [barricadePoints, setBarricadePoints] = useState<BarricadePoint[]>(initialBarricadePoints);
+  const [mlCongestionMultiplier, setMlCongestionMultiplier] = useState<string>('Nominal');
 
   // Workspace Layout
   const [layoutPreset, setLayoutPreset] = useState<'standard' | 'focus' | 'compact'>('standard');
@@ -63,6 +83,27 @@ export default function Home() {
     if (savedPreset) setLayoutPreset(savedPreset as any);
   }, []);
 
+  // Fetch ML Congestion Multiplier whenever weather or time changes
+  useEffect(() => {
+    let active = true;
+    const updateMlMultiplier = async () => {
+      try {
+        const hour = Math.floor(replayTime / 60);
+        const res = await fetch(`/api/weather-fusion?weather=${weather}&hour=${hour}&month=6`);
+        const data = await res.json();
+        if (active && data.success) {
+          setMlCongestionMultiplier(data.congestion_multiplier);
+        }
+      } catch (err) {
+        console.error('Failed to fetch weather ML multiplier for CIS calculation:', err);
+      }
+    };
+    updateMlMultiplier();
+    return () => {
+      active = false;
+    };
+  }, [weather, replayTime]);
+
   const saveWorkspaceConfig = () => {
     localStorage.setItem('astram_layout_config', JSON.stringify(visibleWidgets));
     localStorage.setItem('astram_layout_preset', layoutPreset);
@@ -79,23 +120,60 @@ export default function Home() {
     localStorage.removeItem('astram_layout_preset');
   };
 
-  // CIS Calculation
+  // Compute dynamic Commuter Impact Score (CIS) using ML Decision Tree Regressor
   const calculateCis = () => {
-    let score = 12;
-    if (weather === 'light_rain') score += 16;
-    if (weather === 'heavy_rain') score += 42;
     const activeList = incidents.filter((i) => i.status === 'active');
-    score += activeList.length * 8;
+    const hour = Math.floor(replayTime / 60);
+
+    // If no active incidents, baseline citywide load based on time and weather
+    if (activeList.length === 0) {
+      let baseline = 10;
+      if (mlCongestionMultiplier.startsWith('+')) {
+        const pct = parseInt(mlCongestionMultiplier.replace('+', '').replace('%', ''), 10);
+        baseline += Math.round(pct * 0.25);
+      }
+      // Add general peak hour baseline load
+      if (hour >= 17 && hour <= 20) {
+        baseline += 15;
+      }
+      return Math.max(10, Math.min(100, baseline));
+    }
+
+    // Evaluate ML score for each active incident
+    let maxIncidentScore = 0;
+    activeList.forEach((inc) => {
+      const incScore = evaluateIncidentCis(inc, hour);
+      if (incScore > maxIncidentScore) {
+        maxIncidentScore = incScore;
+      }
+    });
+
+    // Combine incident score with weather and queue multipliers
+    let totalScore = maxIncidentScore;
+    
+    // Scale up for multiple simultaneous blockages
+    if (activeList.length > 1) {
+      totalScore += (activeList.length - 1) * 5;
+    }
+
+    // Apply weather disruption penalty from dynamic ML multiplier
+    if (mlCongestionMultiplier.startsWith('+')) {
+      const pct = parseInt(mlCongestionMultiplier.replace('+', '').replace('%', ''), 10);
+      totalScore += Math.round(pct * 0.2); // Weather factor
+    }
+
+    // Check for SLA breach penalties
     const hasBreach = activeList.some((i) => {
       const daysDiff = Math.floor((Date.now() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24));
       return daysDiff >= 1;
     });
-    if (hasBreach) score += 12;
-    if (alternativePlanActive) score -= 18;
-    if (emergencyCorridorActive) score += 5;
-    const hour = replayTime / 60;
-    if (hour >= 17 && hour <= 20) score += 15;
-    return Math.max(10, Math.min(100, score));
+    if (hasBreach) totalScore += 12;
+
+    // Apply active mitigation benefits
+    if (alternativePlanActive) totalScore -= 18; // dynamic diversions help
+    if (emergencyCorridorActive) totalScore += 5; // green wave causes slight cross-street lag
+
+    return Math.max(10, Math.min(100, totalScore));
   };
 
   // ── Handlers ──────────────────────────────────────────────────
@@ -130,27 +208,35 @@ export default function Home() {
     const corridor = location.toLowerCase().includes('tumkur') ? 'Tumkur Road'
       : location.toLowerCase().includes('orr') ? 'ORR East 2' : 'Non-corridor';
 
-    const newInc = {
+    const newInc: Incident = {
+      id: `FKID${String(Math.floor(Math.random() * 900000) + 100000)}`,
       event_type,
-      incident_type: type,
+      incident_type: type as any,
       start_lat: lat,
       start_lon: lon,
       end_lat: lat,
       end_lon: lon,
       start_address: `${location}, Bengaluru`,
       description: desc,
-      corridor,
+      corridor: corridor as any,
       priority: 'High',
       status: 'active',
       is_verified: true,
-      is_diversion: false,
+      is_diversion: type === 'water_logging' || type === 'accident',
+      vehicle_type: type === 'water_logging' || type === 'accident' ? 'heavy_vehicle' : 'private_car',
       locality: location.split(' ')[0],
       division: 'Bengaluru Central Corporation',
       zone: 'Central Zone 2',
       junction: location.replace(/\s+/g, ''),
       commuter_impact_score: 45,
       duration_sla_hours: 4,
+      kg_id: `FKKG000${Math.floor(Math.random() * 1000)}`,
+      created_at: new Date().toISOString(),
+      reported_by: 'FKUSR00011',
+      created_by: 'FKUSR00001',
     };
+
+    newInc.duration_sla_hours = evaluateIncidentTtr(newInc);
 
     try {
       const res = await fetch(`http://${hostname}:3001/api/v1/incidents`, {
@@ -160,52 +246,85 @@ export default function Home() {
       });
       if (res.ok) {
         const createdInc = await res.json();
-        setIncidents((prev) => [createdInc, ...prev]);
+        setIncidents((prev) => {
+          if (prev.some((i) => i.id === createdInc.id)) return prev;
+          return [createdInc, ...prev];
+        });
         setSelectedIncidentId(createdInc.id);
+      } else {
+        setIncidents((prev) => [newInc, ...prev]);
+        setSelectedIncidentId(newInc.id);
       }
     } catch (err) {
-      console.error('Error adding incident:', err);
+      console.error('Error adding incident, falling back to local state:', err);
+      setIncidents((prev) => [newInc, ...prev]);
+      setSelectedIncidentId(newInc.id);
     }
   };
 
-
   const handleDeployBarricade = (id: string) => {
     setBarricadePoints((prev) =>
-      prev.map((bp) => bp.id === id ? { ...bp, status: bp.status === 'deployed' ? 'pending' : 'deployed' } : bp)
+      prev.map((bp) =>
+        bp.id === id ? { ...bp, status: bp.status === 'deployed' ? 'pending' : 'deployed' } : bp
+      )
     );
   };
 
+  // Map click spawns temporary barricade point
   const handleMapCoordinatesClick = (lat: number, lon: number) => {
+    const newBpId = `BP_MANUAL_${Math.round(lat * 10000)}`;
     const newBp: BarricadePoint = {
-      id: `BP_MANUAL_${Math.round(lat * 10000)}`, lat, lon,
-      road_name: 'Manual Coordinate Selection', type: 'checkpoint',
-      officers_assigned: 2, setup_time_minutes: 10, status: 'deployed',
+      id: newBpId,
+      lat,
+      lon,
+      road_name: 'Manual Coordinate Selection',
+      type: 'checkpoint',
+      officers_assigned: 2,
+      setup_time_minutes: 10,
+      status: 'deployed',
     };
     setBarricadePoints((prev) => [newBp, ...prev]);
+    alert(`Barricade deployed at coordinates: (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
   };
 
+  // Map clicks override junction signals
   const handleToggleJunctionSignal = (juncId: string) => {
     setEmergencyCorridorActive(!emergencyCorridorActive);
+    alert(`Webster Override triggered at junction: ${juncId.toUpperCase()}. Green Wave cycle calibrated.`);
   };
 
+  // Map clicks toggles corridor diversions
   const handleToggleCorridorStatus = (corridorId: string) => {
     setAlternativePlanActive(!alternativePlanActive);
+    alert(`Corridor Diversion toggled for: ${corridorId.toUpperCase()}`);
   };
 
+  // Trigger flood incident at BSNL CACT underpass (Feature 5 monsoon protocol)
   const handleTriggerFlood = () => {
     setWeather('heavy_rain');
-    handleAddIncident('water_logging', 'BSNL CACT Underpass, Outer Ring Road', 12.9995, 77.6827,
-      'Monsoon Protocol: Automated sensor reported 3-feet water logging at BSNL CACT underpass.');
+    handleAddIncident(
+      'water_logging',
+      'BSNL CACT Underpass, Outer Ring Road',
+      12.9995,
+      77.6827,
+      'Monsoon Protocol: Automated sensor reported 3-feet water logging at BSNL CACT underpass.'
+    );
   };
 
+  // AI Co-Pilot advisory action dispatcher
   const handleExecuteAiAction = (actionType: string) => {
     if (actionType === 'deploy_pumps') {
-      setWeather('heavy_rain'); setPumpTeamsDeployed(true); handleTriggerFlood();
+      setWeather('heavy_rain');
+      setPumpTeamsDeployed(true);
+      handleTriggerFlood();
     } else if (actionType === 'recalibrate_signals') {
-      setAlternativePlanActive(true); setEmergencyCorridorActive(true);
+      setAlternativePlanActive(true);
+      setEmergencyCorridorActive(true);
+      alert('AI Execution: Cycle green phases calibrated. CBD 2 corridor cleared.');
     } else if (actionType === 'escalate_wilson') {
       handleUpdateIncidentStatus('FKID000002', 'active', { escalated_to: 'ACP Traffic' });
       setSelectedIncidentId('FKID000002');
+      alert('AI Execution: Chronic ticket FKID000002 escalated to ACP Traffic.');
     }
   };
 
@@ -416,12 +535,15 @@ export default function Home() {
               <WeatherFusion weather={weather} onChangeWeather={setWeather}
                 pumpTeamsDeployed={pumpTeamsDeployed}
                 onTogglePumpTeams={() => setPumpTeamsDeployed(!pumpTeamsDeployed)}
-                onTriggerFloodIncident={handleTriggerFlood} />
+                onTriggerFloodIncident={handleTriggerFlood}
+                hour={Math.floor(replayTime / 60)}
+                month={6}
+              />
             )}
           </div>
         </div>
 
-        {/* Row 3: Incident Feed + Tracker + Signal Timing */}
+        {/* Row 3: Incident Feed + Tracker + Signal Timing/Orchestration */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {visibleWidgets.incidentFeed && (
             <IncidentFeed incidents={incidents} selectedIncidentId={selectedIncidentId}
@@ -431,26 +553,32 @@ export default function Home() {
             <IncidentTracker selectedIncident={incidents.find((i) => i.id === selectedIncidentId) || null}
               onUpdateIncidentStatus={handleUpdateIncidentStatus} officers={initialOfficers} />
           )}
-          {visibleWidgets.signals && (
-            <SignalTimingCard signalPhases={engine.signalPhases}
-              onOverrideSignal={handleOverrideSignal} />
-          )}
-        </div>
 
-        {/* Row 4: Orchestration + Weather */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {visibleWidgets.orchestration && (
-            <OrchestrationPanels barricadePoints={barricadePoints} onDeployBarricade={handleDeployBarricade}
+          {(visibleWidgets.orchestration || visibleWidgets.signals) && (
+            <OrchestrationPanels
+              barricadePoints={barricadePoints}
+              onDeployBarricade={handleDeployBarricade}
               emergencyCorridorActive={emergencyCorridorActive}
               onToggleEmergencyCorridor={() => setEmergencyCorridorActive(!emergencyCorridorActive)}
               weather={weather}
-              onTriggerAnomalyTicket={(title, desc, location, lat, lon, type) => handleAddIncident(type, location, lat, lon, desc)} />
+              onTriggerAnomalyTicket={(title, desc, location, lat, lon, type) =>
+                handleAddIncident(type, location, lat, lon, desc)
+              }
+              replayTime={replayTime}
+              activeIncidents={incidents}
+            />
           )}
+
           {visibleWidgets.weather && visibleWidgets.copilot && (
-            <WeatherFusion weather={weather} onChangeWeather={setWeather}
+            <WeatherFusion
+              weather={weather}
+              onChangeWeather={setWeather}
               pumpTeamsDeployed={pumpTeamsDeployed}
               onTogglePumpTeams={() => setPumpTeamsDeployed(!pumpTeamsDeployed)}
-              onTriggerFloodIncident={handleTriggerFlood} />
+              onTriggerFloodIncident={handleTriggerFlood}
+              hour={Math.floor(replayTime / 60)}
+              month={6}
+            />
           )}
         </div>
 
@@ -473,7 +601,14 @@ export default function Home() {
       {/* Footer */}
       {(visibleWidgets.manpower || visibleWidgets.analytics) && (
         <footer className="bg-slate-950/60 border-t border-slate-900 p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {visibleWidgets.manpower && <ManpowerLeaderboard officers={initialOfficers} />}
+          {visibleWidgets.manpower && (
+            <ManpowerLeaderboard
+              officers={initialOfficers}
+              weather={weather}
+              replayTime={replayTime}
+              activeIncidents={incidents}
+            />
+          )}
           {visibleWidgets.analytics && <PerformanceDashboard />}
         </footer>
       )}

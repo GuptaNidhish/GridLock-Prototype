@@ -1,0 +1,38 @@
+{
+  "hourly_flow_ratios": [
+    0.531,
+    0.515,
+    0.517,
+    0.511,
+    0.591,
+    0.636,
+    0.635,
+    0.557,
+    0.491,
+    0.419,
+    0.379,
+    0.379,
+    0.377,
+    0.364,
+    0.356,
+    0.354,
+    0.354,
+    0.365,
+    0.449,
+    0.6,
+    0.644,
+    0.7,
+    0.594,
+    0.564
+  ],
+  "weather_lost_time": {
+    "clear": 20,
+    "light_rain": 24,
+    "heavy_rain": 30
+  },
+  "junction_corridors": {
+    "Queens Statue Circle": "CBD 2",
+    "BSNL CACT Underpass": "ORR East 2",
+    "Jalahalli Cross Junction": "Tumkur Road"
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Send, CheckCircle, ArrowRight, ShieldAlert, Cpu } from 'lucide-react';
+import { queryCopilotRAG } from '../data/copilotRagEvaluator';
 
 interface AiRecommendation {
   id: string;
@@ -15,6 +16,9 @@ interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
   time: string;
+  actionType?: 'deploy_pumps' | 'recalibrate_signals' | 'escalate_wilson';
+  actionLabel?: string;
+  actionExecuted?: boolean;
 }
 
 interface AiCopilotProps {
@@ -36,7 +40,7 @@ export const AiCopilot: React.FC<AiCopilotProps> = ({
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
     {
       sender: 'ai',
-      text: '🤖 ASTRAM Traffic Brain initialized.\nSystem diagnostics nominal. Monitoring 4 corridors for event-driven delay patterns.\n\nAsk me for "Monsoon Plan", "IPL Crowd Nudge", or "Wilson Garden SLA".',
+      text: '🤖 ASTRAM Traffic Brain initialized.\nSystem diagnostics nominal. Monitoring 4 corridors for event-driven delay patterns.\n\nAsk me for "Monsoon Plan", "IPL Crowd Nudge", or search incidents: "Accident peenya".',
       time: '17:00',
     },
   ]);
@@ -97,24 +101,52 @@ export const AiCopilot: React.FC<AiCopilotProps> = ({
     setQuery('');
 
     setTimeout(() => {
-      let responseText = '';
-      const normText = textToAsk.toLowerCase();
+      const response = queryCopilotRAG(textToAsk, activeIncidentsCount);
+      const timeResp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      if (normText.includes('monsoon') || normText.includes('rain')) {
-        responseText = '🤖 ASTRAM Monsoon Assessment:\n- Heavy rain drops corridor average speeds by 60%.\n- Critical hot-spot: BSNL CACT Underpass.\n- Mitigation activated: Suction pump routing dispatched. Signboards nudging heavy LCVs to use Tumkur corridor bypass.';
-        onExecuteAction('deploy_pumps');
-      } else if (normText.includes('ipl') || normText.includes('match') || normText.includes('crowd')) {
-        responseText = '🤖 ASTRAM IPL Orchestration Plan:\n- 34,000 attendees inbound Chinnaswamy.\n- Active action: Signal cycle at Queens Statue set to 180s green phase.\n- Alternative routing active on CBD links (delays reduced by 25 min).';
-        onExecuteAction('recalibrate_signals');
-      } else if (normText.includes('wilson') || normText.includes('sla') || normText.includes('digging')) {
-        responseText = '🤖 Incident FKID000002 Audit:\n- Description: Road work blocking Urvashi Junction.\n- Duration: 80 days (SLA Violation).\n- Dispatching escalation order to ACP Traffic Suresh Gowda.';
-        onExecuteAction('escalate_wilson');
-      } else {
-        responseText = '🤖 Query received. ASTRAM Knowledge Graph suggests:\n- Average response time: 4m (nominal)\n- Active incidents: ' + activeIncidentsCount + '\n- Emergency Green Wave: ' + (emergencyCorridorActive ? 'ACTIVE' : 'INACTIVE') + '\n\nTry asking: "Monsoon Plan" or "IPL Crowd Nudge".';
-      }
-
-      setChatHistory((prev) => [...prev, { sender: 'ai', text: responseText, time }]);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: response.text,
+          time: timeResp,
+          actionType: response.actionType,
+          actionLabel: response.actionLabel,
+          actionExecuted: false,
+        },
+      ]);
     }, 1000);
+  };
+
+  const handleChatActionExecute = (actionType: 'deploy_pumps' | 'recalibrate_signals' | 'escalate_wilson', msgIdx: number) => {
+    onExecuteAction(actionType);
+
+    // Update the message in chat history to mark action as executed
+    setChatHistory((prev) =>
+      prev.map((msg, i) => (i === msgIdx ? { ...msg, actionExecuted: true } : msg))
+    );
+
+    // Synchronize checklists
+    const mappedRecId =
+      actionType === 'deploy_pumps' ? 'rec_1' :
+      actionType === 'recalibrate_signals' ? 'rec_2' :
+      actionType === 'escalate_wilson' ? 'rec_3' : null;
+
+    if (mappedRecId) {
+      setRecommendations((prev) =>
+        prev.map((rec) => (rec.id === mappedRecId ? { ...rec, executed: true } : rec))
+      );
+    }
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setChatHistory((prev) => [
+      ...prev,
+      {
+        sender: 'ai',
+        text: `⚡ Executed Action: ${actionType.replace('_', ' ').toUpperCase()}. Commands pushed to field officers and signboards.`,
+        time,
+      },
+    ]);
   };
 
   return (
@@ -172,15 +204,35 @@ export const AiCopilot: React.FC<AiCopilotProps> = ({
           {chatHistory.map((msg, i) => (
             <div
               key={i}
-              className={`max-w-[85%] rounded p-2 text-[10px] leading-relaxed ${
+              className={`max-w-[85%] rounded p-2.5 text-[10px] leading-relaxed relative flex flex-col ${
                 msg.sender === 'user'
                   ? 'bg-sky-950 text-slate-100 ml-auto'
-                  : 'bg-slate-900/60 text-slate-200'
+                  : 'bg-slate-900/60 text-slate-200 border border-slate-900/60'
               }`}
             >
               {msg.text.split('\n').map((line, idx) => (
-                <p key={idx}>{line}</p>
+                <p key={idx} className={idx > 0 ? 'mt-0.5' : ''}>{line}</p>
               ))}
+
+              {msg.actionType && (
+                <div className="mt-2.5 border-t border-slate-800/80 pt-2 flex justify-end">
+                  {msg.actionExecuted ? (
+                    <span className="flex items-center space-x-1 text-emerald-400 font-extrabold text-[8.5px] uppercase tracking-wider bg-emerald-950/20 px-2 py-1 rounded border border-emerald-950">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Executed</span>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleChatActionExecute(msg.actionType!, i)}
+                      className="bg-sky-500 hover:bg-sky-400 text-slate-950 px-2 py-1 rounded font-black text-[8.5px] uppercase tracking-wider flex items-center space-x-1 cursor-pointer transition animate-pulse"
+                    >
+                      <span>Execute Action: {msg.actionLabel}</span>
+                      <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+
               <span className="text-[7.5px] text-slate-500 text-right block mt-1">{msg.time}</span>
             </div>
           ))}
@@ -220,3 +272,4 @@ export const AiCopilot: React.FC<AiCopilotProps> = ({
     </div>
   );
 };
+
