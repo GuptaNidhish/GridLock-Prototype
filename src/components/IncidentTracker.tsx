@@ -17,7 +17,7 @@ export const IncidentTracker: React.FC<IncidentTrackerProps> = ({
 
   if (!selectedIncident) {
     return (
-      <div className="glass-panel p-6 flex flex-col justify-center items-center h-full min-h-[300px] text-center">
+      <div className="glass-panel p-6 flex flex-col justify-center items-center h-full text-center">
         <AlertCircle className="w-10 h-10 text-slate-500 mb-2.5" />
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">No Incident Selected</h3>
         <p className="text-[10px] text-slate-500 max-w-[200px] mt-1.5 leading-normal">
@@ -89,7 +89,7 @@ export const IncidentTracker: React.FC<IncidentTrackerProps> = ({
   ];
 
   return (
-    <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[300px]">
+    <div className="glass-panel p-6 flex flex-col justify-between h-full">
       <div>
         <div className="flex justify-between items-start mb-2.5">
           <div>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { BarricadePoint } from '../data/mockDatabase';
-import { Shield, Settings, Users, AlertTriangle, CheckCircle, Navigation, Radio, ParkingSquare, Train, Eye, ArrowRight } from 'lucide-react';
+import { Shield, Settings, Users, AlertTriangle, CheckCircle, Navigation, Radio, ParkingSquare, Train, Eye, ArrowRight, ExternalLink } from 'lucide-react';
 import { evaluateSignalTimings, generateRouteVaccinationTimeline } from '../data/signalsMlEvaluator';
+import { useToast } from './ToastProvider';
 
 interface OrchestrationPanelsProps {
   barricadePoints: BarricadePoint[];
@@ -28,6 +29,7 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
   const [vipLevel, setVipLevel] = useState<'Z+' | 'Z' | 'Y'>('Z');
   const [anomalyLogged, setAnomalyLogged] = useState(false);
   const [appliedWebsterJunctions, setAppliedWebsterJunctions] = useState<Record<string, boolean>>({});
+  const { showToast } = useToast();
 
   const hour = Math.floor(replayTime / 60) % 24;
   const signalRecommendations = evaluateSignalTimings(hour, weather, activeIncidents);
@@ -58,11 +60,11 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
     }));
     // Toggle green wave system override on the map/telemetries
     onToggleEmergencyCorridor();
-    alert(`AI Adaptive Recalibration Applied at ${junctionName}.\nWebster parameters loaded. Cycle timing adjusted.`);
+    showToast(`AI Adaptive Recalibration Applied at ${junctionName}.\nWebster parameters loaded. Cycle timing adjusted.`, 'action');
   };
 
   return (
-    <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[380px]">
+    <div className="glass-panel p-6 flex flex-col justify-between h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div>
@@ -71,6 +73,13 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
           </h2>
           <p className="text-[10px] text-slate-400">Tactical execution, signal timing, and agency command bridges</p>
         </div>
+        <button
+          onClick={() => window.open('/orchestration', '_blank')}
+          title="Open in new tab"
+          className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Tabs */}
@@ -103,7 +112,7 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
               <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
                 <span>Barricade Planner</span>
                 <button
-                  onClick={() => alert('Orders printed and assigned to officer devices via ASTRAM Mobile.')}
+                  onClick={() => showToast('Orders printed and assigned to officer devices via ASTRAM Mobile.', 'success')}
                   className="text-[8.5px] bg-slate-900 border border-slate-800 hover:border-slate-700 text-sky-400 px-2 py-0.5 rounded transition cursor-pointer"
                 >
                   Print Orders
@@ -344,7 +353,7 @@ export const OrchestrationPanels: React.FC<OrchestrationPanelsProps> = ({
 
               <div className="mt-3 flex justify-end space-x-2">
                 <button
-                  onClick={() => alert('CCTV Stream #47 active. View port loaded in overlay.')}
+                  onClick={() => showToast('CCTV Stream #47 active. View port loaded in overlay.', 'info')}
                   className="bg-slate-900 border border-slate-800 text-slate-350 hover:text-slate-200 px-2.5 py-1 rounded font-bold uppercase text-[8.5px] flex items-center space-x-1 cursor-pointer"
                 >
                   <Eye className="w-3 h-3 mr-0.5" />

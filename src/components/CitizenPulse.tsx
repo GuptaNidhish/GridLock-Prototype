@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Users, TrendingUp, AlertCircle, Plus, Smile, Frown, Check } from 'lucide-react';
+import { MessageSquare, Users, TrendingUp, AlertCircle, Plus, Smile, Frown, Check, ExternalLink } from 'lucide-react';
 import { Incident } from '../data/mockDatabase';
 
 interface CitizenPulseProps {
@@ -26,6 +26,7 @@ export const CitizenPulse: React.FC<CitizenPulseProps> = ({
   onAddIncidentFromPulse,
   activeIncidents,
 }) => {
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState<string | null>(null);
   const [posts, setPosts] = useState<PulsePost[]>([
     {
       id: 'post_0',
@@ -142,6 +143,10 @@ export const CitizenPulse: React.FC<CitizenPulseProps> = ({
     );
   };
 
+  const filteredPosts = selectedLocationFilter
+    ? posts.filter((post) => post.location.toLowerCase().includes(selectedLocationFilter.toLowerCase()))
+    : posts;
+
   return (
     <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[350px]">
       <div className="flex justify-between items-center mb-3">
@@ -151,34 +156,64 @@ export const CitizenPulse: React.FC<CitizenPulseProps> = ({
           </h2>
           <p className="text-[10px] text-slate-400">Scraping social media alerts for unreported disruptions</p>
         </div>
-        <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[10px] font-bold text-red-400">
-          <Frown className="w-3.5 h-3.5" />
-          <span>78% ANGRY/FRUSTRATED</span>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[10px] font-bold text-red-400">
+            <Frown className="w-3.5 h-3.5" />
+            <span>78% ANGRY/FRUSTRATED</span>
+          </div>
+          <button
+            onClick={() => window.open('/pulse', '_blank')}
+            title="Open in new tab"
+            className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
       {/* Trending Topics */}
       <div className="bg-slate-950/60 border border-slate-900/60 p-2.5 rounded-lg mb-3">
-        <div className="flex items-center space-x-1 mb-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-          <TrendingUp className="w-3.5 h-3.5 text-sky-400" />
-          <span>Trending Alert Locations</span>
+        <div className="flex justify-between items-center mb-1.5">
+          <div className="flex items-center space-x-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <TrendingUp className="w-3.5 h-3.5 text-sky-400" />
+            <span>Trending Alert Locations</span>
+          </div>
+          {selectedLocationFilter && (
+            <button
+              onClick={() => setSelectedLocationFilter(null)}
+              className="text-[8px] text-red-400 hover:text-red-300 font-black uppercase tracking-wider cursor-pointer transition"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <span className="text-[9px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium">
-            1. Silk Board (342 posts)
-          </span>
-          <span className="text-[9px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium">
-            2. ORR Marathahalli (189 posts)
-          </span>
-          <span className="text-[9px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium">
-            3. Tin Factory (156 posts)
-          </span>
+          {[
+            { label: '1. Silk Board (342 posts)', query: 'Silk Board' },
+            { label: '2. ORR Marathahalli (189 posts)', query: 'ORR' },
+            { label: '3. Tin Factory (156 posts)', query: 'Tin Factory' },
+          ].map((loc) => {
+            const isActive = selectedLocationFilter === loc.query;
+            return (
+              <button
+                key={loc.query}
+                onClick={() => setSelectedLocationFilter(isActive ? null : loc.query)}
+                className={`text-[9px] border px-2 py-0.5 rounded font-medium cursor-pointer transition ${
+                  isActive
+                    ? 'bg-sky-500 border-sky-400 text-slate-950 font-bold'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                {loc.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Posts Stream */}
       <div className="flex-1 space-y-3 max-h-[190px] overflow-y-auto pr-1">
-        {posts.map((post) => (
+        {filteredPosts.map((post) => (
           <div
             key={post.id}
             className={`border rounded-lg p-3 transition flex flex-col justify-between ${

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, CloudRain, Shield, AlertTriangle, CheckCircle, Navigation, Loader2 } from 'lucide-react';
+import { Sun, CloudRain, Shield, AlertTriangle, CheckCircle, Navigation, Loader2, ExternalLink } from 'lucide-react';
 
 interface WeatherWarning {
   title: string;
@@ -92,9 +92,18 @@ export const WeatherFusion: React.FC<WeatherFusionProps> = ({
           </h2>
           <p className="text-[10px] text-slate-400">Sync meteorological data to predict flood cascades</p>
         </div>
-        <span className={`text-[9px] font-black border px-2 py-0.5 rounded uppercase tracking-wider ${alertStyle.colorClass}`}>
-          {alertStyle.level}
-        </span>
+        <div className="flex items-center space-x-2">
+          <span className={`text-[9px] font-black border px-2 py-0.5 rounded uppercase tracking-wider ${alertStyle.colorClass}`}>
+            {alertStyle.level}
+          </span>
+          <button
+            onClick={() => window.open('/weather', '_blank')}
+            title="Open in new tab"
+            className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Weather Selector */}

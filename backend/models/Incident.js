@@ -1,4 +1,5 @@
 const db = require('../db');
+const mlEvaluator = require('../services/mlEvaluator');
 
 class Incident {
   static getAll(filters = {}) {
@@ -55,6 +56,12 @@ class Incident {
   static create(data) {
     return new Promise((resolve, reject) => {
       const id = data.id || `FKID${String(Math.floor(Math.random() * 900000) + 100000)}`;
+      
+      // Real-time ML Model Predictions on Incident Creation
+      const currentHour = new Date(data.created_at || new Date()).getHours();
+      const cis = mlEvaluator.evaluateCis(data, currentHour);
+      const ttr = mlEvaluator.evaluateTtr(data);
+
       const query = `
         INSERT INTO incidents (
           id, event_type, incident_type, start_lat, start_lon, end_lat, end_lon,
@@ -112,8 +119,8 @@ class Incident {
         data.division || 'Bengaluru Corporation',
         data.zone || 'Central Zone 2',
         data.junction || 'Junction',
-        data.commuter_impact_score || 45,
-        data.duration_sla_hours || 4,
+        cis,
+        ttr,
         data.estimated_clearance || null,
         data.backup_field || null
       ];
@@ -126,23 +133,39 @@ class Incident {
   }
 
   static update(id, updates) {
-    return new Promise((resolve, reject) => {
-      const keys = Object.keys(updates);
-      if (keys.length === 0) return reject(new Error('No fields to update'));
+    return new Promise(async (resolve, reject) => {
+      try {
+        const existing = await Incident.getById(id);
+        if (!existing) return resolve(new Error('Incident not found'));
 
-      // Convert boolean inputs to integers for SQLite mapping
-      if ('is_diversion' in updates) updates.is_diversion = updates.is_diversion ? 1 : 0;
-      if ('is_verified' in updates) updates.is_verified = updates.is_verified ? 1 : 0;
+        // Normalize boolean updates to match existing
+        const normUpdates = { ...updates };
+        if ('is_diversion' in normUpdates) normUpdates.is_diversion = normUpdates.is_diversion ? 1 : 0;
+        if ('is_verified' in normUpdates) normUpdates.is_verified = normUpdates.is_verified ? 1 : 0;
 
-      const setClause = keys.map(k => `${k} = ?`).join(', ');
-      const query = `UPDATE incidents SET ${setClause}, last_updated = ? WHERE id = ?`;
-      const params = [...keys.map(k => updates[k]), new Date().toISOString(), id];
+        // Merge updates with existing incident state
+        const merged = { ...existing, ...normUpdates };
 
-      db.run(query, params, function(err) {
-        if (err) return reject(err);
-        if (this.changes === 0) return resolve(null);
-        Incident.getById(id).then(resolve).catch(reject);
-      });
+        // Dynamic ML metric recalculations on update
+        const currentHour = new Date(merged.created_at || new Date()).getHours();
+        normUpdates.commuter_impact_score = mlEvaluator.evaluateCis(merged, currentHour);
+        normUpdates.duration_sla_hours = mlEvaluator.evaluateTtr(merged);
+
+        const keys = Object.keys(normUpdates);
+        if (keys.length === 0) return reject(new Error('No fields to update'));
+
+        const setClause = keys.map(k => `${k} = ?`).join(', ');
+        const query = `UPDATE incidents SET ${setClause}, last_updated = ? WHERE id = ?`;
+        const params = [...keys.map(k => normUpdates[k]), new Date().toISOString(), id];
+
+        db.run(query, params, function(err) {
+          if (err) return reject(err);
+          if (this.changes === 0) return resolve(null);
+          Incident.getById(id).then(resolve).catch(reject);
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 

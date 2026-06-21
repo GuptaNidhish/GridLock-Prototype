@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, FastForward, Info, Shuffle } from 'lucide-react';
+import { Play, Pause, FastForward, Info, Shuffle, ExternalLink } from 'lucide-react';
 
 interface ChronoReplayProps {
   replayTime: number; // in minutes (e.g., 1020 = 17:00)
@@ -99,8 +99,17 @@ export const ChronoReplay: React.FC<ChronoReplayProps> = ({
           </h2>
           <p className="text-[10px] text-slate-400">Reconstruct past traffic cascades and simulate counterfactual plans</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 text-[10px] px-2.5 py-1 rounded font-bold text-sky-400 tracking-wider">
-          EVENT: IPL CRICKET MATCH
+        <div className="flex items-center space-x-2">
+          <div className="bg-slate-900 border border-slate-800 text-[10px] px-2.5 py-1 rounded font-bold text-sky-400 tracking-wider">
+            EVENT: IPL CRICKET MATCH
+          </div>
+          <button
+            onClick={() => window.open('/replay', '_blank')}
+            title="Open in new tab"
+            className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

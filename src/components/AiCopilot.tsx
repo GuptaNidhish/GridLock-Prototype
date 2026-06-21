@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Send, CheckCircle, ArrowRight, ShieldAlert, Cpu } from 'lucide-react';
+import { Sparkles, Send, CheckCircle, ArrowRight, ShieldAlert, Cpu, ExternalLink } from 'lucide-react';
 import { queryCopilotRAG } from '../data/copilotRagEvaluator';
 
 interface AiRecommendation {
@@ -151,12 +151,21 @@ export const AiCopilot: React.FC<AiCopilotProps> = ({
 
   return (
     <div className="glass-panel p-6 flex flex-col justify-between h-full min-h-[350px]">
-      <div>
-        <h2 className="text-sm font-bold tracking-wider uppercase text-slate-300 flex items-center space-x-1.5">
-          <Cpu className="w-4 h-4 text-sky-400" />
-          <span>ASTRAM AI Traffic Brain</span>
-        </h2>
-        <p className="text-[10px] text-slate-400">Deep learning telemetry analysis and recommendation dispatch</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-sm font-bold tracking-wider uppercase text-slate-300 flex items-center space-x-1.5">
+            <Cpu className="w-4 h-4 text-sky-400" />
+            <span>ASTRAM AI Traffic Brain</span>
+          </h2>
+          <p className="text-[10px] text-slate-400">Deep learning telemetry analysis and recommendation dispatch</p>
+        </div>
+        <button
+          onClick={() => window.open('/copilot', '_blank')}
+          title="Open in new tab"
+          className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Recommendations Checklist */}

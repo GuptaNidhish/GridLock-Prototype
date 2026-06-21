@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Officer } from '../data/mockDatabase';
-import { Calendar, Award, UserCheck, Star, Clock, Trophy } from 'lucide-react';
+import { Calendar, Award, UserCheck, Star, Clock, Trophy, ExternalLink } from 'lucide-react';
 import { evaluateManpowerNeeds } from '../data/manpowerMlEvaluator';
 
 interface ManpowerLeaderboardProps {
@@ -30,6 +30,13 @@ export const ManpowerLeaderboard: React.FC<ManpowerLeaderboardProps> = ({
           </h2>
           <p className="text-[10px] text-slate-400">Shift planning optimizer and field officer achievements</p>
         </div>
+        <button
+          onClick={() => window.open('/manpower', '_blank')}
+          title="Open in new tab"
+          className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Tabs */}

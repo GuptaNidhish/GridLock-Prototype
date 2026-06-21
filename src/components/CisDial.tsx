@@ -1,4 +1,5 @@
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
 interface CisDialProps {
   score: number;
@@ -41,8 +42,17 @@ export const CisDial: React.FC<CisDialProps> = ({ score }) => {
 
   return (
     <div className="glass-panel p-6 flex flex-col items-center justify-between h-full min-h-[220px]">
-      <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">
-        Commuter Impact Score (CIS)
+      <div className="w-full flex justify-between items-center mb-2">
+        <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
+          Commuter Impact Score (CIS)
+        </div>
+        <button
+          onClick={() => window.open('/cis', '_blank')}
+          title="Open in new tab"
+          className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+        >
+          <ExternalLink className="w-3 h-3" />
+        </button>
       </div>
 
       <div className="relative w-36 h-36 flex items-center justify-center">

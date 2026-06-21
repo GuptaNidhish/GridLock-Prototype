@@ -5,13 +5,15 @@ import { DigitalTwinMap } from '../../components/DigitalTwinMap';
 import { initialIncidents, initialBarricadePoints } from '../../data/mockDatabase';
 import { Home, Compass, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { ToastProvider, useToast } from '../../components/ToastProvider';
 
-export default function FullscreenMap() {
+function MapContent() {
   const [weather, setWeather] = useState<'clear' | 'light_rain' | 'heavy_rain'>('clear');
   const [emergencyCorridorActive, setEmergencyCorridorActive] = useState(false);
   const [barricadePoints, setBarricadePoints] = useState(initialBarricadePoints);
   const [activeIncidents, setActiveIncidents] = useState(initialIncidents);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   return (
     <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col font-sans p-6 relative">
@@ -55,10 +57,18 @@ export default function FullscreenMap() {
           onSelectIncident={(id) => {
             setSelectedIncident(id);
             const inc = activeIncidents.find((i) => i.id === id);
-            alert(`Map Selected Incident: ${inc?.id}\n${inc?.description}\nLocality: ${inc?.locality}`);
+            showToast(`Selected: ${inc?.id} — ${inc?.description?.substring(0, 60)}...`, 'info');
           }}
         />
       </div>
     </div>
+  );
+}
+
+export default function FullscreenMap() {
+  return (
+    <ToastProvider>
+      <MapContent />
+    </ToastProvider>
   );
 }

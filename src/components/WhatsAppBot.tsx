@@ -198,6 +198,25 @@ export const WhatsAppBot: React.FC<WhatsAppBotProps> = ({
           <div ref={chatEndRef} />
         </div>
 
+        {/* Suggestion Chips */}
+        <div className="px-2 py-1 bg-[#111b21] border-t border-[#2d3a42] flex space-x-1.5 overflow-x-auto">
+          {[
+            { label: '🌲 Tree Fall', text: 'Tree fall Sankey Road' },
+            { label: '🚗 Accident', text: 'Accident Silk Board' },
+            { label: '🌊 Waterlogging', text: 'Water logging ORR' },
+            { label: '🔀 Divert', text: '1' },
+            { label: '✅ Clear', text: 'ack' },
+          ].map((chip) => (
+            <button
+              key={chip.label}
+              onClick={() => handleSend(chip.text)}
+              className="text-[8px] bg-[#202c33] hover:bg-[#2a3942] border border-[#2d3a42] text-slate-350 hover:text-slate-200 px-2 py-0.5 rounded transition cursor-pointer whitespace-nowrap"
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
         {/* Chat Input */}
         <div className="bg-[#202c33] p-1.5 flex items-center space-x-1 border-t border-[#2d3a42]">
           <button

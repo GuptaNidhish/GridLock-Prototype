@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Incident, BarricadePoint } from '../data/mockDatabase';
 import { CorridorSpeed } from '../hooks/useRealtimeEngine';
 import { ExternalLink, AlertTriangle, CloudRain, Shield, ToggleLeft, ToggleRight, MapPin } from 'lucide-react';
+import { useToast } from './ToastProvider';
 
 interface DigitalTwinMapProps {
   weather: 'clear' | 'light_rain' | 'heavy_rain';
@@ -28,6 +29,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
+  const { showToast } = useToast();
   const layersRef = useRef<{
     incidents: any;
     junctions: any;
@@ -355,7 +357,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      alert(`Manual breakdown reported on ${clickedItem.name}. Dispatching officers.`);
+                      showToast(`Manual breakdown reported on ${clickedItem.name}. Dispatching officers.`, 'warning');
                       setClickedItem(null);
                     }}
                     className="bg-red-950 border border-red-800 text-red-400 px-2.5 py-1 rounded font-bold uppercase text-[8.5px] cursor-pointer"
@@ -378,7 +380,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      alert(`Stationing auxiliary traffic warden at ${clickedItem.name}.`);
+                      showToast(`Stationing auxiliary traffic warden at ${clickedItem.name}.`, 'success');
                       setClickedItem(null);
                     }}
                     className="bg-slate-900 hover:bg-slate-800 text-slate-200 px-2.5 py-1 rounded font-bold uppercase text-[8.5px] cursor-pointer border border-slate-800"
@@ -392,7 +394,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
                 <>
                   <button
                     onClick={() => {
-                      alert(`Spawning smart barricade at coordinate.`);
+                      showToast(`Spawning smart barricade at coordinate.`, 'success');
                       setClickedItem(null);
                     }}
                     className="bg-amber-500 hover:bg-amber-450 text-slate-950 px-2.5 py-1 rounded font-black uppercase text-[8.5px] cursor-pointer"
@@ -401,7 +403,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      alert(`Patrol dispatch sent to coordinates.`);
+                      showToast(`Patrol dispatch sent to coordinates.`, 'action');
                       setClickedItem(null);
                     }}
                     className="bg-slate-900 hover:bg-slate-850 text-slate-200 px-2.5 py-1 rounded font-bold uppercase text-[8.5px] cursor-pointer border border-slate-800"

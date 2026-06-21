@@ -125,6 +125,18 @@ function toggleSimulation() {
 }
 
 function start() {
+  // Query DB to find the maximum incident counter to avoid SQLITE_CONSTRAINT UNIQUE failures
+  const dbConnection = require('../db');
+  dbConnection.get("SELECT id FROM incidents WHERE id LIKE 'FKID%' ORDER BY id DESC LIMIT 1", (err, row) => {
+    if (!err && row && row.id) {
+      const match = row.id.match(/FKID(\d+)/);
+      if (match) {
+        incidentCounter = Math.max(incidentCounter, parseInt(match[1], 10));
+        console.log(`Initialized simulation incidentCounter dynamically to: ${incidentCounter}`);
+      }
+    }
+  });
+
   // 1. Clock timer (1s)
   setInterval(() => {
     const now = new Date();

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Incident } from '../data/mockDatabase';
-import { AlertTriangle, Truck, CloudRain, TreePine, Hammer, Users, ChevronRight, ExternalLink, Flame } from 'lucide-react';
+import { AlertTriangle, Truck, CloudRain, TreePine, Hammer, Users, ChevronRight, ExternalLink, Flame, Clock } from 'lucide-react';
 
 interface IncidentFeedProps {
   incidents: Incident[];
@@ -30,6 +30,12 @@ const getTimeAgo = (timestamp: string) => {
   return `${Math.floor(hours / 24)}d ago`;
 };
 
+const isSlaBreached = (inc: Incident): boolean => {
+  if (inc.status !== 'active') return false;
+  const elapsedHours = (Date.now() - new Date(inc.created_at).getTime()) / (1000 * 60 * 60);
+  return elapsedHours > (inc.duration_sla_hours || 4);
+};
+
 export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   incidents,
   selectedIncidentId,
@@ -52,9 +58,10 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
     const age = Date.now() - new Date(i.created_at).getTime();
     return age < 30000; // Less than 30 seconds old
   }).length;
+  const breachedCount = activeIncidents.filter(isSlaBreached).length;
 
   return (
-    <div className="glass-panel p-5 flex flex-col h-full min-h-[350px]">
+    <div className="glass-panel p-5 flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div>
@@ -70,9 +77,22 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               {newCount} NEW
             </span>
           )}
+          {breachedCount > 0 && (
+            <span className="bg-orange-950 border border-orange-800 text-orange-400 text-[8px] font-black px-2 py-0.5 rounded-full flex items-center space-x-0.5">
+              <Clock className="w-2.5 h-2.5" />
+              <span>{breachedCount} SLA</span>
+            </span>
+          )}
           <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-bold">
             {activeIncidents.length} active
           </span>
+          <button
+            onClick={() => window.open('/feed', '_blank')}
+            title="Open in new tab"
+            className="p-1 hover:bg-slate-900 border border-slate-800 rounded transition text-slate-400 hover:text-slate-200 cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -81,6 +101,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
         {activeIncidents.map((inc, idx) => {
           const isNew = (Date.now() - new Date(inc.created_at).getTime()) < 30000;
           const isSelected = inc.id === selectedIncidentId;
+          const breached = isSlaBreached(inc);
 
           return (
             <button
@@ -89,6 +110,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               className={`w-full text-left flex items-center space-x-2.5 px-3 py-2 rounded-lg border transition cursor-pointer group ${
                 isSelected
                   ? 'bg-sky-950/40 border-sky-800'
+                  : breached
+                  ? 'bg-red-950/15 border-red-900/50'
                   : isNew
                   ? 'bg-amber-950/20 border-amber-900/40 animate-pulse'
                   : 'bg-slate-950/30 border-slate-900 hover:border-slate-800 hover:bg-slate-900/30'
@@ -96,7 +119,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               style={isNew ? { animationDuration: '3s', animationIterationCount: '3' } : undefined}
             >
               {/* Severity indicator */}
-              <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${inc.priority === 'High' ? 'bg-red-500' : 'bg-amber-500'}`} />
+              <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${breached ? 'bg-red-500 animate-pulse' : inc.priority === 'High' ? 'bg-red-500' : 'bg-amber-500'}`} />
 
               {/* Type Icon */}
               <div className="flex-shrink-0">{getTypeIcon(inc.incident_type)}</div>
@@ -108,6 +131,12 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 bg-slate-900 px-1 rounded">
                     {inc.incident_type.replace(/_/g, ' ')}
                   </span>
+                  {breached && (
+                    <span className="text-[7px] font-black uppercase tracking-wider text-red-400 bg-red-950/60 border border-red-900/40 px-1 py-px rounded flex items-center space-x-0.5">
+                      <Clock className="w-2 h-2" />
+                      <span>SLA BREACH</span>
+                    </span>
+                  )}
                 </div>
                 <p className="text-[9.5px] text-slate-300 truncate mt-0.5">{inc.locality} — {inc.corridor}</p>
               </div>
@@ -115,8 +144,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               {/* Time */}
               <div className="flex-shrink-0 text-right">
                 <p className="text-[9px] text-slate-500 font-bold">{getTimeAgo(inc.created_at)}</p>
-                <p className={`text-[8px] font-black uppercase tracking-wider mt-0.5 ${inc.priority === 'High' ? 'text-red-400' : 'text-amber-400'}`}>
-                  {inc.priority}
+                <p className={`text-[8px] font-black uppercase tracking-wider mt-0.5 ${breached ? 'text-red-400' : inc.priority === 'High' ? 'text-red-400' : 'text-amber-400'}`}>
+                  {breached ? 'OVERDUE' : inc.priority}
                 </p>
               </div>
 
