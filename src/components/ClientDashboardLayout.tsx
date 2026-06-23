@@ -21,6 +21,7 @@ import {
   Sliders,
   BarChart3,
   X,
+  Video,
 } from 'lucide-react';
 
 export const ClientDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,6 +58,7 @@ export const ClientDashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   const navItems = [
     { name: 'Map Control', path: '/', icon: Map },
     { name: 'Incident Center', path: '/tracker', icon: ClipboardList },
+    { name: 'CCTV Monitor', path: '/cctv', icon: Video },
     { name: 'Orchestration', path: '/orchestration', icon: Sliders },
     { name: 'Performance Analytics', path: '/analytics', icon: BarChart3 },
   ];
