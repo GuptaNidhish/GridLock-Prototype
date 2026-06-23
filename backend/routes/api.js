@@ -12,6 +12,7 @@ const analyticsController = require('../controllers/analyticsController');
 const eventController = require('../controllers/eventController');
 const zoneController = require('../controllers/zoneController');
 const alertController = require('../controllers/alertController');
+const geminiController = require('../controllers/geminiController');
 
 // Incidents
 router.get('/incidents', incidentController.getIncidents);
@@ -56,5 +57,8 @@ router.post('/zones/overlap', zoneController.checkZoneOverlap);
 
 // Warnings Alerts
 router.get('/alerts/active', alertController.getActiveAlerts);
+
+// Gemini Recommendations
+router.get('/gemini/recommendations', geminiController.getRecommendations);
 
 module.exports = router;

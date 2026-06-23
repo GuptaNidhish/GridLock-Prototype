@@ -46,7 +46,6 @@ function initWebSocket(server) {
     });
 
     ws.on('close', () => {
-      clients.add(ws);
       clients.delete(ws);
       console.log(`WebSocket client disconnected. Total clients: ${clients.size}`);
     });

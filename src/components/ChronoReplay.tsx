@@ -158,8 +158,8 @@ export const ChronoReplay: React.FC<ChronoReplayProps> = ({
       <div className="px-2 mb-4">
         <input
           type="range"
-          min="720" // 12:00 PM
-          max="1440" // 12:00 AM (Midnight)
+          min="0" // 12:00 AM (Midnight)
+          max="1440" // 12:00 AM (Midnight next day)
           value={replayTime}
           onChange={(e) => {
             setIsPlaying(false);
@@ -168,10 +168,10 @@ export const ChronoReplay: React.FC<ChronoReplayProps> = ({
           className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
         />
         <div className="flex justify-between text-[9px] text-slate-500 font-bold tracking-wider mt-1.5 uppercase">
+          <span>12:00 AM</span>
+          <span>6:00 AM</span>
           <span>12:00 PM</span>
-          <span>3:00 PM</span>
           <span>6:00 PM (Peak Entry)</span>
-          <span>9:00 PM</span>
           <span>12:00 AM</span>
         </div>
       </div>

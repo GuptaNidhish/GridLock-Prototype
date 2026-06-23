@@ -10,7 +10,8 @@ interface DigitalTwinMapProps {
   emergencyCorridorActive: boolean;
   activeIncidents: Incident[];
   corridorSpeeds?: CorridorSpeed[];
-  onSelectIncident: (id: string) => void;
+  selectedIncidentId?: string | null;
+  onSelectIncident: (id: string | null) => void;
   onMapCoordinatesClick?: (lat: number, lon: number) => void;
   onToggleJunctionSignal?: (junctionId: string) => void;
   onToggleCorridorStatus?: (corridorId: string) => void;
@@ -22,6 +23,7 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
   emergencyCorridorActive,
   activeIncidents,
   corridorSpeeds,
+  selectedIncidentId,
   onSelectIncident,
   onMapCoordinatesClick,
   onToggleJunctionSignal,
@@ -45,6 +47,8 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
     lat: number;
     lon: number;
   } | null>(null);
+
+  const selectedIncident = activeIncidents.find((inc) => inc.id === selectedIncidentId);
 
   const getRoadColor = (roadName: string) => {
     const isHeavyRain = weather === 'heavy_rain';
@@ -272,6 +276,21 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
     });
   }, [weather, emergencyCorridorActive, activeIncidents, barricadePoints, corridorSpeeds]);
 
+  // Center or Fly to selected incident on map when selectedIncidentId changes
+  useEffect(() => {
+    if (!leafletMapRef.current || !selectedIncidentId) return;
+
+    const incident = activeIncidents.find((inc) => inc.id === selectedIncidentId && inc.status === 'active');
+    if (incident) {
+      const targetCoords: [number, number] = [incident.start_lat, incident.start_lon];
+      // Fly to the coordinates for a premium, smooth zoom and transition effect
+      leafletMapRef.current.flyTo(targetCoords, 14, {
+        animate: true,
+        duration: 1.5
+      });
+    }
+  }, [selectedIncidentId, activeIncidents]);
+
   return (
     <div className="glass-panel p-6 flex flex-col h-full relative overflow-hidden dark-map-container">
       <div className="flex justify-between items-center mb-4 z-10 relative">
@@ -412,6 +431,80 @@ export const DigitalTwinMap: React.FC<DigitalTwinMapProps> = ({
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Incident Detail Floating Popup */}
+        {selectedIncident && (
+          <div className="absolute top-2 right-2 bg-slate-950/95 border border-red-900/40 backdrop-blur-md p-4 rounded-lg shadow-2xl text-[10px] w-[310px] z-20 flex flex-col justify-between animate-fade-in">
+            <div className="flex justify-between items-start mb-2 border-b border-slate-900 pb-2">
+              <div>
+                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                  selectedIncident.priority === 'High' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                }`}>
+                  {selectedIncident.priority} PRIORITY
+                </span>
+                <h3 className="font-extrabold uppercase text-slate-200 mt-1.5 text-xs tracking-wider flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  <span>{selectedIncident.incident_type.replace(/_/g, ' ')}</span>
+                </h3>
+              </div>
+              <button
+                onClick={() => onSelectIncident(null)}
+                className="text-slate-400 hover:text-slate-200 text-xs font-bold p-1 cursor-pointer transition"
+                title="Dismiss Popup"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col space-y-2 font-sans mb-3 text-slate-300">
+              <div className="flex justify-between items-center text-[9px] text-slate-500 font-mono">
+                <span>CASE ID: {selectedIncident.id}</span>
+                <span>STATUS: <span className={selectedIncident.status === 'active' ? 'text-red-400 font-bold uppercase' : 'text-emerald-400 font-bold uppercase'}>{selectedIncident.status}</span></span>
+              </div>
+
+              <div>
+                <span className="text-slate-500 font-bold uppercase text-[8px] tracking-wider block">Location / Address</span>
+                <span className="text-slate-200 font-medium text-[9px]">{selectedIncident.start_address}</span>
+              </div>
+
+              {selectedIncident.corridor && selectedIncident.corridor !== 'Non-corridor' && (
+                <div>
+                  <span className="text-slate-555 text-slate-500 font-bold uppercase text-[8px] tracking-wider block">Affected Corridor</span>
+                  <span className="text-slate-200 font-bold text-[9px]">{selectedIncident.corridor}</span>
+                </div>
+              )}
+
+              <div>
+                <span className="text-slate-500 font-bold uppercase text-[8px] tracking-wider block">Description</span>
+                <p className="text-slate-300 text-[9px] leading-relaxed mt-0.5 bg-slate-900/60 p-2 rounded border border-slate-900">{selectedIncident.description}</p>
+              </div>
+
+              <div className="flex justify-between items-center text-[8.5px] border-t border-slate-900 pt-2 text-slate-400">
+                <span suppressHydrationWarning>Logged: {new Date(selectedIncident.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="font-mono text-amber-500">SLA: {selectedIncident.duration_sla_hours} hrs</span>
+              </div>
+            </div>
+
+            <div className="flex space-x-2 border-t border-slate-900 pt-3">
+              <button
+                onClick={() => onSelectIncident(null)}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 py-1.5 rounded font-bold uppercase text-[8.5px] text-center cursor-pointer transition"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => {
+                  window.open('/tracker', '_blank');
+                  onSelectIncident(null);
+                }}
+                className="flex-1 bg-sky-500 hover:bg-sky-400 text-slate-950 py-1.5 rounded font-black uppercase text-[8.5px] text-center cursor-pointer transition flex items-center justify-center space-x-1"
+              >
+                <span>Audit File</span>
+                <span className="text-[10px]">➜</span>
+              </button>
             </div>
           </div>
         )}

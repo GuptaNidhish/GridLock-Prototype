@@ -8,7 +8,9 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "sqlite3": "^5.1.7",
     "ws": "^8.18.0"

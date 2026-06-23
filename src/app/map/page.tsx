@@ -54,10 +54,15 @@ function MapContent() {
           barricadePoints={barricadePoints}
           emergencyCorridorActive={emergencyCorridorActive}
           activeIncidents={activeIncidents}
+          selectedIncidentId={selectedIncident}
           onSelectIncident={(id) => {
             setSelectedIncident(id);
-            const inc = activeIncidents.find((i) => i.id === id);
-            showToast(`Selected: ${inc?.id} — ${inc?.description?.substring(0, 60)}...`, 'info');
+            if (id) {
+              const inc = activeIncidents.find((i) => i.id === id);
+              if (inc) {
+                showToast(`Selected: ${inc.id} — ${inc.description?.substring(0, 60)}...`, 'info');
+              }
+            }
           }}
         />
       </div>

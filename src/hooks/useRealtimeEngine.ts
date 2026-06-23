@@ -89,98 +89,107 @@ export function useRealtimeEngine(
   }, []);
 
   useEffect(() => {
-    // Initial fetch
+    let mounted = true;
+    let reconnectTimeout: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      if (!mounted) return;
+
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      const wsUrl = `ws://${hostname}:3001`;
+      console.log('Connecting to ASTRAM WebSocket Server:', wsUrl);
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        if (!mounted) return;
+        try {
+          const message = JSON.parse(event.data);
+
+          switch (message.type) {
+            case 'INIT_STATE':
+              setClock(message.data.clock || '00:00:00');
+              setUptime(message.data.uptime || 0);
+              setSimulationActive(message.data.simulationActive);
+              setWeather(message.data.weather || 'clear');
+              if (message.data.feedEntries && message.data.feedEntries.length > 0) {
+                setFeedEntries(message.data.feedEntries);
+              }
+              if (message.data.corridorSpeeds) setCorridorSpeeds(message.data.corridorSpeeds);
+              if (message.data.signalPhases) setSignalPhases(message.data.signalPhases);
+              break;
+
+            case 'CLOCK_TICK':
+              setClock(message.data.clock);
+              setUptime(message.data.uptime);
+              break;
+
+            case 'SIGNALS_TICK':
+              setSignalPhases(message.data);
+              break;
+
+            case 'SPEEDS_TICK':
+              setCorridorSpeeds(message.data);
+              break;
+
+            case 'WEATHER_TICK':
+              setWeather(message.data.weather);
+              break;
+
+            case 'FEED_UPDATE':
+              setFeedEntries((prev) => [message.data, ...prev].slice(0, 50));
+              break;
+
+            case 'NEW_INCIDENT':
+              setIncidents((prev) => [message.data, ...prev]);
+              setSelectedIncidentId(message.data.id);
+              break;
+
+            case 'INCIDENT_UPDATED':
+              setIncidents((prev) =>
+                prev.map((inc) => (inc.id === message.data.id ? message.data : inc))
+              );
+              break;
+
+            case 'INCIDENT_DELETED':
+              setIncidents((prev) => prev.filter((inc) => inc.id !== message.id));
+              break;
+
+            case 'SIMULATION_STATE_CHANGE':
+              setSimulationActive(message.data.simulationActive);
+              break;
+
+            default:
+              break;
+          }
+        } catch (err) {
+          console.warn('Error parsing WS message:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.warn('WebSocket Connection Error:', err);
+      };
+
+      ws.onclose = () => {
+        if (!mounted) return;
+        console.log('WebSocket Connection Closed. Retrying in 5 seconds...');
+        fetchIncidents();
+        reconnectTimeout = setTimeout(connect, 5000);
+      };
+    };
+
+    // Initial fetch and connect
     fetchIncidents();
-
-    // Setup WebSocket
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    const wsUrl = `ws://${hostname}:3001`;
-    console.log('Connecting to ASTRAM WebSocket Server:', wsUrl);
-
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        switch (message.type) {
-          case 'INIT_STATE':
-            setClock(message.data.clock || '00:00:00');
-            setUptime(message.data.uptime || 0);
-            setSimulationActive(message.data.simulationActive);
-            setWeather(message.data.weather || 'clear');
-            if (message.data.feedEntries && message.data.feedEntries.length > 0) {
-              setFeedEntries(message.data.feedEntries);
-            }
-            if (message.data.corridorSpeeds) setCorridorSpeeds(message.data.corridorSpeeds);
-            if (message.data.signalPhases) setSignalPhases(message.data.signalPhases);
-            break;
-
-          case 'CLOCK_TICK':
-            setClock(message.data.clock);
-            setUptime(message.data.uptime);
-            break;
-
-          case 'SIGNALS_TICK':
-            setSignalPhases(message.data);
-            break;
-
-          case 'SPEEDS_TICK':
-            setCorridorSpeeds(message.data);
-            break;
-
-          case 'WEATHER_TICK':
-            setWeather(message.data.weather);
-            break;
-
-          case 'FEED_UPDATE':
-            setFeedEntries((prev) => [message.data, ...prev].slice(0, 50));
-            break;
-
-          case 'NEW_INCIDENT':
-            setIncidents((prev) => [message.data, ...prev]);
-            setSelectedIncidentId(message.data.id);
-            break;
-
-          case 'INCIDENT_UPDATED':
-            setIncidents((prev) =>
-              prev.map((inc) => (inc.id === message.data.id ? message.data : inc))
-            );
-            break;
-
-          case 'INCIDENT_DELETED':
-            setIncidents((prev) => prev.filter((inc) => inc.id !== message.id));
-            break;
-
-          case 'SIMULATION_STATE_CHANGE':
-            setSimulationActive(message.data.simulationActive);
-            break;
-
-          default:
-            break;
-        }
-      } catch (err) {
-        console.error('Error parsing WS message:', err);
-      }
-    };
-
-    ws.onerror = (err) => {
-      console.error('WebSocket Error:', err);
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket Connection Closed. Retrying in 5 seconds...');
-      setTimeout(() => {
-        // Simple reconnect logic if component is still mounted
-        if (wsRef.current === ws) {
-          fetchIncidents();
-        }
-      }, 5000);
-    };
+    connect();
 
     return () => {
-      ws.close();
+      mounted = false;
+      clearTimeout(reconnectTimeout);
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
   }, [fetchIncidents, setWeather, setSelectedIncidentId, setIncidents]);
 
